@@ -1,0 +1,11 @@
+build/
+*.user
+*.autosave
+.DS_Store
+.idea/
+.vscode/
+*.app/
+*.exe
+*.dll
+*.dmg
+*.AppImage
