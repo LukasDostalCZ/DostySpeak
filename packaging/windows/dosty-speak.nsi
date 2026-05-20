@@ -72,11 +72,19 @@ BrandingText "${APP_NAME}"
 
 !insertmacro MUI_LANGUAGE "English"
 
-Function CloseRunningDostySpeak
+!macro CloseRunningDostySpeakBody
   DetailPrint "Closing running Dosty Speak instances..."
   nsExec::ExecToLog 'taskkill /F /T /IM dosty-speak.exe'
   nsExec::ExecToLog 'taskkill /F /T /IM dosty-speak-legacy-win32.exe'
   Sleep 1000
+!macroend
+
+Function CloseRunningDostySpeak
+  !insertmacro CloseRunningDostySpeakBody
+FunctionEnd
+
+Function un.CloseRunningDostySpeak
+  !insertmacro CloseRunningDostySpeakBody
 FunctionEnd
 
 
@@ -135,7 +143,7 @@ Section "Desktop shortcut" SecDesktop
 SectionEnd
 
 Section "Uninstall"
-  Call CloseRunningDostySpeak
+  Call un.CloseRunningDostySpeak
   Delete "$DESKTOP\Dosty Speak.lnk"
   Delete "$SMPROGRAMS\Dosty Speak\Dosty Speak.lnk"
   Delete "$SMPROGRAMS\Dosty Speak\Uninstall Dosty Speak.lnk"
@@ -147,7 +155,7 @@ Section "Uninstall"
   DeleteRegKey HKLM "${APP_REGKEY}"
 SectionEnd
 
-Section /o "Remove user data, downloaded voices and bundled runtime" SecRemoveData
+Section /o "Remove user data, downloaded voices and bundled runtime" un.SecRemoveData
   RMDir /r "$APPDATA\Dosty\DostySpeak"
   RMDir /r "$LOCALAPPDATA\Dosty\DostySpeak"
 SectionEnd
@@ -159,5 +167,5 @@ LangString DESC_SecRemoveData ${LANG_ENGLISH} "Also delete settings, phrases, do
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecProgram} $(DESC_SecProgram)
   !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} $(DESC_SecDesktop)
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecRemoveData} $(DESC_SecRemoveData)
+  !insertmacro MUI_DESCRIPTION_TEXT ${un.SecRemoveData} $(DESC_SecRemoveData)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END

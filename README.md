@@ -6,7 +6,7 @@
 
 Author: **Lukáš Dostál**  
 License: **MIT**  
-Current version: **0.2.49**
+Current version: **0.2.52**
 
 ---
 
@@ -1251,3 +1251,48 @@ chmod +x scripts/debug-macos-run.sh
 ```
 
 and send the output.
+
+
+### Windows build fix
+
+Version 0.2.51 fixes a Windows CMake/resource build regression.
+
+The Windows icon resource is no longer added through a generator expression inside `add_executable`. Instead, CMake now creates the `.rc` file with `configure_file()` and adds it through a normal `if(WIN32)` source variable.
+
+This should fix Windows build errors around the app icon/resource file.
+
+If your local tree has an old broken CMake cache, clean it once:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\clean-windows-build.ps1
+```
+
+Then build again:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-release-terminal.ps1
+```
+
+
+### Windows NSIS uninstall function fix
+
+Version 0.2.52 fixes NSIS installer generation.
+
+NSIS requires functions called from the uninstall section to use the `un.` prefix. The installer now defines both:
+
+```nsis
+Function CloseRunningDostySpeak
+Function un.CloseRunningDostySpeak
+```
+
+and the uninstall section correctly calls:
+
+```nsis
+Call un.CloseRunningDostySpeak
+```
+
+This fixes the build error:
+
+```text
+Call must be used with function names starting with "un." in the uninstall section.
+```

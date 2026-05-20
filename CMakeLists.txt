@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(DostySpeak
-    VERSION 0.2.49
+    VERSION 0.2.52
     DESCRIPTION "Cross-platform phrase based text-to-speech app"
     LANGUAGES CXX
 )
@@ -19,6 +19,18 @@ else()
 endif()
 
 set(CMAKE_AUTOMOC ON)
+
+if(WIN32)
+    enable_language(RC)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/dosty-speak.rc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/dosty-speak.rc"
+        @ONLY
+    )
+    set(DOSTY_SPEAK_PLATFORM_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/dosty-speak.rc")
+else()
+    set(DOSTY_SPEAK_PLATFORM_SOURCES "")
+endif()
 
 add_executable(dosty-speak WIN32
     src/main.cpp
@@ -38,7 +50,7 @@ add_executable(dosty-speak WIN32
     src/Speaker.h
     src/MainWindow.cpp
     src/MainWindow.h
-    $<$<PLATFORM_ID:Windows>:src/windows/dosty-speak.rc>
+    ${DOSTY_SPEAK_PLATFORM_SOURCES}
 )
 
 target_link_libraries(dosty-speak PRIVATE
@@ -100,14 +112,14 @@ install(FILES resources/icons/256x256/dosty-speak.png DESTINATION share/icons/hi
 # Linux package generation via CPack.
 set(CPACK_PACKAGE_NAME "dosty-speak")
 set(CPACK_PACKAGE_VENDOR "Lukas Dostal")
-set(CPACK_PACKAGE_CONTACT "Lukas Dostal")
+set(CPACK_PACKAGE_CONTACT "Lukas Dostal <luklin626@gmail.com>")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Cross-platform phrase based text-to-speech app")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/luklin626/dosty-speak")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_FILE_NAME "DostySpeak-${PROJECT_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Lukas Dostal")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Lukas Dostal <luklin626@gmail.com>")
 set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6 | libqt5widgets5, libqt6network6 | libqt5network5, espeak-ng, alsa-utils")
 set(CPACK_RPM_PACKAGE_LICENSE "MIT")

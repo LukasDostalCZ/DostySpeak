@@ -1,3 +1,14 @@
+## 0.2.52
+
+- Fixed NSIS installer generation by adding `un.CloseRunningDostySpeak` and using it from uninstall sections.
+- Fixed optional uninstall-only user-data section naming.
+
+## 0.2.51
+
+- Fixed Windows CMake resource/icon handling by replacing generator-expression `.rc` source with a configured RC file.
+- Added `scripts/clean-windows-build.ps1` for clearing stale Windows build caches.
+- Windows build script now removes the old build folder before configuring.
+
 ## 0.2.49
 
 - Fixed macOS resource placement: resources now copy to `Contents/Resources/resources` instead of `Contents/MacOS/resources`.
