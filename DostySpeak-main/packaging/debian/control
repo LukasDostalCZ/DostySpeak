@@ -1,0 +1,13 @@
+Source: dosty-speak
+Section: utils
+Priority: optional
+Maintainer: Lukáš Dostál <luklin626@gmail.com>
+Build-Depends: debhelper-compat (= 13), cmake, qt6-base-dev | qtbase5-dev, build-essential
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: dosty-speak
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, espeak-ng, alsa-utils
+Description: Cross-platform phrase based text-to-speech app
+ Dosty Speak is a small Qt application for saved phrases and text-to-speech.

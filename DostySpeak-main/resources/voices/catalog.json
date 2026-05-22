@@ -1,0 +1,152 @@
+[
+  {
+    "id": "cs_CZ-jirka-low",
+    "language": "cs-CZ",
+    "name": {
+      "en": "Czech — Jirka — low / faster",
+      "cs": "Čeština — Jirka — low / rychlejší"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/low/cs_CZ-jirka-low.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/low/cs_CZ-jirka-low.onnx.json"
+  },
+  {
+    "id": "cs_CZ-jirka-medium",
+    "language": "cs-CZ",
+    "name": {
+      "en": "Czech — Jirka — medium",
+      "cs": "Čeština — Jirka — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx.json"
+  },
+  {
+    "id": "de_DE-thorsten-low",
+    "language": "de-DE",
+    "name": {
+      "en": "German — Thorsten — low / faster",
+      "cs": "Němčina — Thorsten — low / rychlejší"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json"
+  },
+  {
+    "id": "de_DE-thorsten-medium",
+    "language": "de-DE",
+    "name": {
+      "en": "German — Thorsten — medium",
+      "cs": "Němčina — Thorsten — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/medium/de_DE-thorsten-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/medium/de_DE-thorsten-medium.onnx.json"
+  },
+  {
+    "id": "en_US-amy-low",
+    "language": "en-US",
+    "name": {
+      "en": "English US — Amy — low / faster",
+      "cs": "Angličtina US — Amy — low / rychlejší"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx.json"
+  },
+  {
+    "id": "en_US-amy-medium",
+    "language": "en-US",
+    "name": {
+      "en": "English US — Amy — medium",
+      "cs": "Angličtina US — Amy — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/medium/en_US-amy-medium.onnx.json"
+  },
+  {
+    "id": "en_US-ryan-low",
+    "language": "en-US",
+    "name": {
+      "en": "English US — Ryan — low / faster",
+      "cs": "Angličtina US — Ryan — low / rychlejší"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/low/en_US-ryan-low.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/low/en_US-ryan-low.onnx.json"
+  },
+  {
+    "id": "en_US-ryan-medium",
+    "language": "en-US",
+    "name": {
+      "en": "English US — Ryan — medium",
+      "cs": "Angličtina US — Ryan — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/en_US-ryan-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json"
+  },
+  {
+    "id": "es_ES-davefx-medium",
+    "language": "es-ES",
+    "name": {
+      "en": "Spanish ES — DaveFX — medium",
+      "cs": "Španělština ES — DaveFX — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_ES/davefx/medium/es_ES-davefx-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_ES/davefx/medium/es_ES-davefx-medium.onnx.json"
+  },
+  {
+    "id": "fr_FR-siwis-low",
+    "language": "fr-FR",
+    "name": {
+      "en": "French — Siwis — low / faster",
+      "cs": "Francouzština — Siwis — low / rychlejší"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/low/fr_FR-siwis-low.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/low/fr_FR-siwis-low.onnx.json"
+  },
+  {
+    "id": "fr_FR-siwis-medium",
+    "language": "fr-FR",
+    "name": {
+      "en": "French — Siwis — medium",
+      "cs": "Francouzština — Siwis — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/fr_FR-siwis-medium.onnx.json"
+  },
+  {
+    "id": "it_IT-paola-medium",
+    "language": "it-IT",
+    "name": {
+      "en": "Italian — Paola — medium",
+      "cs": "Italština — Paola — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/paola/medium/it_IT-paola-medium.onnx.json"
+  },
+  {
+    "id": "pl_PL-gosia-medium",
+    "language": "pl-PL",
+    "name": {
+      "en": "Polish — Gosia — medium",
+      "cs": "Polština — Gosia — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/pl/pl_PL/gosia/medium/pl_PL-gosia-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/pl/pl_PL/gosia/medium/pl_PL-gosia-medium.onnx.json"
+  },
+  {
+    "id": "sk_SK-lili-medium",
+    "language": "sk-SK",
+    "name": {
+      "en": "Slovak — Lili — medium",
+      "cs": "Slovenština — Lili — medium"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/sk/sk_SK/lili/medium/sk_SK-lili-medium.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/sk/sk_SK/lili/medium/sk_SK-lili-medium.onnx.json"
+  },
+  {
+    "id": "uk_UA-lada-x_low",
+    "language": "uk-UA",
+    "name": {
+      "en": "Ukrainian — Lada — x-low / fastest",
+      "cs": "Ukrajinština — Lada — x-low / nejrychlejší"
+    },
+    "onnxUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/uk/uk_UA/lada/x_low/uk_UA-lada-x_low.onnx",
+    "configUrl": "https://huggingface.co/rhasspy/piper-voices/resolve/main/uk/uk_UA/lada/x_low/uk_UA-lada-x_low.onnx.json"
+  }
+]

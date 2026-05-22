@@ -1,0 +1,40 @@
+Dosty Speak - Windows 10 LTSC 2019 quick start
+==============================================
+
+1) Extract this ZIP, for example to:
+   C:\Users\Dosty\Dev\dosty-speak
+
+2) Open PowerShell.
+
+3) Run:
+
+   cd $env:USERPROFILE\Dev\dosty-speak
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
+
+Alternative one-click launcher:
+
+   Double-click RUN_BUILDER_WINDOWS_LTS2019.bat
+
+Desktop Windows build requirements:
+- Windows 10 LTSC 2019
+- MSYS2 in C:\msys64
+- Qt toolchain used by the existing Windows build scripts
+- CMake and Ninja available in PATH, or installed through MSYS2 scripts
+
+Android APK build on Windows requirements:
+- Android Studio or Android command-line tools
+- Android SDK and NDK
+- Qt Online Installer with Android arm64-v8a kit
+- Qt host kit from the same Qt version, for example msvc2022_64 or mingw_64
+
+The builder tries to detect paths automatically. If your paths are custom, set these before running:
+
+   $env:ANDROID_SDK_ROOT="C:\Users\Dosty\AppData\Local\Android\Sdk"
+   $env:ANDROID_NDK_ROOT="C:\Users\Dosty\AppData\Local\Android\Sdk\ndk\27.2.12479018"
+   $env:QT_ANDROID_PREFIX="C:\Users\Dosty\Qt\6.11.1\android_arm64_v8a"
+   $env:QT_HOST_PATH="C:\Users\Dosty\Qt\6.11.1\msvc2022_64"
+
+Where to find outputs:
+- Windows desktop packages: dist\
+- Android APK: dist\android\
+- Logs: logs\
