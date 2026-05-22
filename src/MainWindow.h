@@ -25,6 +25,9 @@ private:
     QVector<Phrase> phrases_;
     Speaker speaker_;
     QNetworkAccessManager network_;
+    QString autocompletePrefix_;
+    QStringList autocompleteCandidates_;
+    int autocompleteCandidateIndex_ = -1;
 
     QLineEdit *input_ = nullptr;
     QLineEdit *search_ = nullptr;
@@ -32,6 +35,11 @@ private:
     QTreeWidget *phraseTree_ = nullptr;
     QComboBox *sortCombo_ = nullptr;
     QLabel *status_ = nullptr;
+    QLabel *autocompleteInline_ = nullptr;
+    QLabel *autocompletePreview_ = nullptr;
+    QListWidget *autocompletePopup_ = nullptr;
+    QComboBox *presetCombo_ = nullptr;
+    bool suppressAutocompleteReset_ = false;
     QSlider *mainVolumeSlider_ = nullptr;
     QSlider *mainSpeedSlider_ = nullptr;
 
@@ -60,12 +68,25 @@ private:
     void loadSelectedPhraseIntoInput();
     void updateModeStatus(const QString &mode);
     void selectVisiblePhraseNumber(int number, bool speakImmediately);
+    void selectAdjacentVisiblePhrase(int delta);
+    bool autocompleteCurrentWord();
+    QStringList autocompleteWords(const QString &prefix) const;
+    QString currentWordPrefix() const;
+    void updateAutocompletePreview();
+    void refreshAutocompletePopup(const QStringList &candidates, int activeIndex = 0);
+    void hideAutocompletePopup();
+    QString currentVoicePresetJson() const;
+    void applyVoicePresetJson(const QString &json);
+    void saveCurrentVoicePreset();
+    void refreshPresetCombo();
     void focusPhraseList();
 
     void showVoiceDialog();
     void showSettingsDialog();
     void showLanguageDialog();
     void showFirstRunWizard();
+    void showSynthInstallDialog(QWidget *parentWidget);
+    void showDefaultVoiceWizard(QWidget *parentWidget);
     void resetSettingsAndRestartWizard();
     void clearAppDataFiles();
     void rebuildUiAfterLanguageChange();
@@ -75,6 +96,9 @@ private:
     bool configurePiperVoiceById(const QString &voiceId, QWidget *parentWidget, bool installRuntimeIfNeeded);
     void downloadVoice(const QString &voiceId);
     void installPiperRuntime();
+    bool installVisualCppRuntime(QWidget *parentWidget, bool silent = false);
+    bool installEdgeTtsRuntime(QWidget *parentWidget, bool silent = false);
+    bool installEspeakNgRuntime(QWidget *parentWidget, bool silent = false);
     void downloadUrlToFile(const QUrl &url, const QString &target, QProgressDialog *progress, std::function<void(bool)> done);
 
     void importPhrases();

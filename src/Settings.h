@@ -6,7 +6,7 @@
 struct AppSettings {
     QString language = "en";
 
-    QString engine = "native";          // native | piper
+    QString engine = "native";          // native | piper | google_online | espeak_ng | edge_online
     QString nativeVoice = "cs";
     int nativeSpeed = 130;
     int nativePitch = 35;
@@ -16,6 +16,12 @@ struct AppSettings {
     QString piperBinary;
     QString piperModel;
     QString audioPlayer;
+    QString onlineLanguage = "cs";       // cs | en | sk | de ...
+    QString edgeTtsCommand;              // edge-tts command path, empty = auto
+
+    QString activeVoicePreset;
+    QStringList voicePresetNames;
+    QStringList voicePresetValues;       // compact JSON strings matching voicePresetNames
 
     double piperLengthScale = 0.85;
     double piperNoiseScale = 0.35;

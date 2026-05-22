@@ -2,1199 +2,107 @@
 
 # Dosty Speak
 
-**Dosty Speak** is a small cross-platform phrase based text-to-speech app written in **C++17 + Qt Widgets**.
+**Dosty Speak** is a small cross-platform text-to-speech app for quickly speaking typed and saved phrases.
+
+It is built in **C++17 + Qt Widgets**.
 
 Author: **Lukáš Dostál**  
 License: **MIT**  
-Current version: **0.2.52**
+Current version: **0.3.39**
 
 ---
 
-## Build and run — Linux
+## What it does
 
-These commands assume you are already inside the project folder.
-
-### Ubuntu / Debian — Qt 6
-
-```bash
-sudo apt update
-sudo apt install -y build-essential cmake qt6-base-dev qt6-base-dev-tools python3 python3-venv espeak-ng alsa-utils
-
-rm -rf build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j"$(nproc)"
-
-./build/dosty-speak
-```
-
-### Ubuntu / Debian — Qt 5 fallback
-
-Use this on older or 32-bit systems where Qt 6 is not available.
-
-```bash
-sudo apt update
-sudo apt install -y build-essential cmake qtbase5-dev qtbase5-dev-tools python3 python3-venv espeak-ng alsa-utils
-
-rm -rf build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j"$(nproc)"
-
-./build/dosty-speak
-```
-
-### Install on Linux into your user account
-
-```bash
-chmod +x scripts/install-linux.sh
-./scripts/install-linux.sh
-```
-
-After installation:
-
-```bash
-dosty-speak
-```
-
-If the command is not found, close and reopen the terminal or run:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-dosty-speak
-```
+- speak typed text,
+- save frequently used phrases,
+- organize phrases into folders,
+- use keyboard-friendly controls,
+- use system voices or Piper voices where available,
+- run on macOS, Windows and Linux.
 
 ---
 
-## Build and run — macOS
+## Supported builds
 
-These commands assume you are already inside the project folder.
-
-### 1. Install tools
-
-Install Homebrew first if you do not have it:
-
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-Then install Qt and CMake:
-
-```bash
-brew install cmake qt
-```
-
-### 2. Build
-
-```bash
-rm -rf build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
-cmake --build build -j"$(sysctl -n hw.ncpu)"
-```
-
-### 3. Run
-
-```bash
-./build/dosty-speak
-```
-
-macOS uses the built-in `say` command for native speech.
-
-### 4. Install locally on macOS
-
-```bash
-chmod +x scripts/install-macos.sh
-./scripts/install-macos.sh
-```
-
-After installation, run:
-
-```bash
-"$HOME/.local/bin/dosty-speak"
-```
-
-The installer also creates:
-
-```text
-~/Applications/Dosty Speak.app
-```
-
-### 5. Create a distributable macOS app later
-
-For a proper `.app` or `.dmg`, use Qt deployment tools after creating an app bundle:
-
-```bash
-macdeployqt "Dosty Speak.app" -dmg
-```
-
-This part may need extra polishing depending on your Qt/CMake setup.
+| Platform | Status |
+|---|---|
+| macOS | Main modern Qt app |
+| Windows 64-bit | Main modern Qt app, installer EXE and portable ZIP |
+| Windows 32-bit | Very limited legacy Win32 build, no Piper/Python, basic phrase speaking only |
+| Linux | Main modern Qt app, portable tar.gz, DEB and RPM |
 
 ---
 
-## Build and run — Windows 10/11 64-bit
+## Windows build
 
-There are two options.
+### Requirements
 
-### Option A — copy/paste from normal PowerShell
+Install these manually first:
 
-These commands assume you are already inside the project folder in **normal Windows PowerShell**.
+1. **MSYS2**  
+   Download and install from:  
+   https://www.msys2.org/
 
-Do **not** run `pacman` directly in PowerShell. `pacman` exists only inside MSYS2.
+2. **NSIS** for the Windows installer EXE  
+   Download and install from:  
+   https://nsis.sourceforge.io/Download
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-powershell.ps1
-```
+Windows 10 2019 LTSC may not have `winget`, so the build scripts do **not** rely on it. Install MSYS2 and NSIS from the links above.
 
-The raw `build\dosty-speak.exe` is not enough for normal double-click use, because it needs Qt/MSYS2 DLLs.
+### Build
 
-Create a runnable Windows folder:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy-windows-powershell.ps1
-```
-
-Run the deployed app:
-
-```powershell
-.\dist\DostySpeak-Windows-x86_64\dosty-speak.exe
-```
-
-This creates:
-
-```text
-dist\DostySpeak-Windows-x86_64.zip
-```
-
-### Option B — manual build inside MSYS2 UCRT64
-
-Install MSYS2 from:
-
-```text
-https://www.msys2.org/
-```
-
-Open **MSYS2 UCRT64**. Then go to the project folder.
-
-Example:
-
-```bash
-cd /c/Users/Lukli/Downloads/dosty-speak-cpp-project-v18/dosty-speak
-```
-
-Then run:
-
-```bash
-pacman -Syu
-pacman -S --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-qt6-base mingw-w64-ucrt-x86_64-python
-
-rm -rf build
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-
-./build/dosty-speak.exe
-```
-
-Important:
-
-- `pacman` works in **MSYS2 UCRT64**, not in PowerShell.
-- PowerShell path: `C:\Users\Lukli\Downloads\...`
-- MSYS2 path: `/c/Users/Lukli/Downloads/...`
-
----
-
-## Build and run — Windows 10 32-bit
-
-Use **MSYS2 MINGW32** shell. These commands are not PowerShell commands.
-
-These commands assume you are already inside the project folder in the MSYS2 MINGW32 shell.
-
-```bash
-pacman -Syu
-pacman -S --needed mingw-w64-i686-gcc mingw-w64-i686-cmake mingw-w64-i686-qt5-base
-
-rm -rf build32
-cmake -S . -B build32 -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-cmake --build build32 -j
-
-./build32/dosty-speak.exe
-```
-
-For deployment:
-
-```bash
-windeployqt build32/dosty-speak.exe
-```
-
-Notes:
-
-- 32-bit Windows 10 is a target.
-- Windows XP is not a target.
-- 64-bit Windows should prefer the Qt 6 UCRT64 build.
-
----
-
-
-
-### Reset now clears runtime data for testing
-
-From version 0.2.22, the in-app reset removes:
-
-- settings,
-- phrases,
-- downloaded voices,
-- Piper runtime,
-- bundled official Python runtime,
-- generated audio/temp text files.
-
-This makes repeated first-run testing cleaner.
-
-
-## Reset setup / run the wizard again
-
-Inside the app:
-
-```text
-View → Reset settings and open setup wizard…
-```
-
-This clears settings and phrases, then opens the first-run wizard again.
-
-Downloaded Piper runtime and voice models are kept so they do not need to be downloaded again.
-
-Manual reset commands:
-
-### Linux
-
-```bash
-chmod +x scripts/reset-linux.sh
-./scripts/reset-linux.sh
-```
-
-### macOS
-
-```bash
-chmod +x scripts/reset-macos.sh
-./scripts/reset-macos.sh
-```
-
-### Windows PowerShell
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/reset-windows.ps1
-```
-
-
-## Quick troubleshooting
-
-### Clean rebuild
-
-Use this whenever the build behaves strangely:
-
-```bash
-rm -rf build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j"$(nproc)"
-```
-
-On macOS:
-
-```bash
-rm -rf build
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
-cmake --build build -j"$(sysctl -n hw.ncpu)"
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Windows Piper bundled official Python runtime
-
-Version 0.2.20 changes the Windows Piper installer to always use Dosty Speak's
-bundled official Python runtime instead of depending on system Python.
-
-When Piper is installed on Windows, Dosty Speak downloads:
-
-```text
-python-3.11.9-embed-amd64.zip
-get-pip.py
-```
-
-into its own app data folder, enables `site-packages`, installs pip, and installs
-`piper-tts` there.
-
-This avoids Microsoft Store Python aliases and avoids requiring users to install
-Python manually.
-
-
-### Windows embedded Python for Piper
-
-Version 0.2.19 can install a bundled official Python runtime for Dosty Speak on Windows.
-
-If no usable system Python is found, the app downloads official Python embeddable ZIP into its own app data folder, bootstraps pip, and installs `piper-tts` there.
-
-This means users do not need to install Python manually just to use Piper voices.
-
-
-### Windows Piper Python detection fix
-
-Version 0.2.18 improves Piper setup on Windows.
-
-Instead of showing the Microsoft Store Python alias error, the app now probes several Python candidates first:
-
-- `py -3`
-- `python3`
-- `python`
-- Python installed in `%LOCALAPPDATA%\Programs\Python`
-- `C:\msys64\ucrt64\bin\python.exe`
-- `C:\msys64\mingw64\bin\python.exe`
-
-Only after no working Python is found does it show one clear message.
-
-
-### First-run text and Windows Piper Python fix
-
-Version 0.2.17 removes the unnecessary "long options" note from the first-run wizard and widens setup/voice dialogs.
-
-It also improves Piper setup on Windows:
-
-- tries `py -3`,
-- then `python3`,
-- then `python`,
-- then `C:\msys64\ucrt64\bin\python.exe`.
-
-This avoids the Microsoft Store `python.exe` alias problem when possible.
-
-
-### Windows missing DLL fix
-
-Version 0.2.16 changes Windows deployment to copy all `.dll` files from
-`C:\msys64\ucrt64\bin` into the deployment folder after `windeployqt`.
-
-This is intentionally less minimal, but much more reliable for MSYS2-built Qt apps.
-
-If you see errors like:
-
-```text
-Qt6Core.dll was not found
-libstdc++-6.dll was not found
-libgcc_s_seh-1.dll was not found
-```
-
-do not run `build\dosty-speak.exe`.
-
-Run the deployed app instead:
-
-```powershell
-.\dist\DostySpeak-Windows-x86_64\dosty-speak.exe
-```
-
-or double-click:
-
-```text
-dist\DostySpeak-Windows-x86_64\run-dosty-speak.cmd
-```
-
-The build helper now automatically runs the deployment helper after a successful build.
-
-
-### Windows DLL deployment fix
-
-Version 0.2.15 improves Windows deployment.
-
-If the raw `build\dosty-speak.exe` shows an error like:
-
-```text
-Qt6Core.dll was not found
-Qt6Gui.dll was not found
-```
-
-that is expected for an undeployed Qt build. Run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\deploy-windows-powershell.ps1
-```
-
-Then start:
-
-```powershell
-.\dist\DostySpeak-Windows-x86_64\dosty-speak.exe
-```
-
-The deploy helper now runs `windeployqt` and also copies MSYS2/UCRT runtime DLLs recursively.
-
-
-### Windows Ninja build fix
-
-Version 0.2.14 switches the Windows helper from `MinGW Makefiles` to `Ninja`.
-
-If you saw:
-
-```text
-CMake was unable to find a build program corresponding to "MinGW Makefiles"
-CMAKE_MAKE_PROGRAM is not set
-CMAKE_CXX_COMPILER not set
-```
-
-use version 0.2.14 or newer. The helper now installs `mingw-w64-ucrt-x86_64-ninja`
-and builds with:
-
-```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-```
-
-
-### Windows MSYS2 runtime update fix
-
-Version 0.2.13 handles the normal MSYS2 behavior where `msys2-runtime` or `pacman`
-updates terminate all MSYS2 processes.
-
-If you saw something like:
-
-```text
-:: To complete this update all MSYS2 processes including this terminal will be closed.
-SUCCESS: The process with PID ... has been terminated.
-MSYS2 build failed with exit code 1
-```
-
-use version 0.2.13 or newer. The PowerShell helper now runs the MSYS2 update
-in a separate phase, allows that phase to end non-zero, then starts a fresh
-MSYS2 process for dependency install and build.
-
-
-### Windows PowerShell project script fix
-
-Version 0.2.12 changes the Windows PowerShell helper again: instead of generating
-a temp script that has to `cd` to the project path, it writes a temporary
-`.dosty-build-msys2.sh` file directly into the project folder and lets bash
-detect its own directory.
-
-If you saw:
-
-```text
-/c/Users/.../dosty-speak: Is a directory
-```
-
-use version 0.2.12 or newer.
-
-
-### Windows PowerShell newline path fix
-
-Version 0.2.11 fixes the Windows build helper so MSYS2 paths are trimmed and bash-quoted before being written into the temporary build script.
-
-If you saw something like:
-
-```text
-cd: $'\n/c/Users/.../dosty-speak\n': No such file or directory
-```
-
-use version 0.2.11 or newer.
-
-The helper now also fails properly when MSYS2 build fails, instead of printing a fake success message.
-
-
-### Windows PowerShell temp path fix
-
-Version 0.2.10 fixes the Windows build helper so it no longer calls `Resolve-Path`
-on a temporary script before that file exists.
-
-If you saw:
-
-```text
-Resolve-Path : Cannot find path ... dosty-speak-build-....sh because it does not exist.
-```
-
-use version 0.2.10 or newer.
-
-
-### Windows PowerShell quoting fix
-
-Version 0.2.9 rewrites the Windows PowerShell helper to avoid fragile double-quoted strings.
-If you saw:
-
-```text
-The string is missing the terminator: ".
-```
-
-use version 0.2.9 or newer.
-
-
-### Windows PowerShell script parser fix
-
-Version 0.2.8 fixes the PowerShell helper so bash commands such as `pacman -Syu --noconfirm || true` are no longer parsed by PowerShell.
-
-If you saw:
-
-```text
-The token '||' is not a valid statement separator in this version.
-```
-
-use version 0.2.8 or newer and run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-powershell.ps1
-```
-
-
-### Windows: pacman is not recognized
-
-You are running MSYS2 commands in PowerShell.
-
-This will fail:
-
-```powershell
-pacman -Syu
-```
-
-Use one of these instead:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-powershell.ps1
-```
-
-or open **MSYS2 UCRT64** and run the `pacman` commands there.
-
-
-### Linux: command not found after install
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-dosty-speak
-```
-
-### Reset app data
-
-This removes saved phrases/settings and regenerates clean defaults:
-
-```bash
-rm -rf ~/.local/share/Dosty/DostySpeak
-```
-
----
-
-
-
-
-## Piper setup robustness
-
-Version 0.2.6 makes Piper setup more defensive:
-
-- if Piper runtime already exists, the app reuses it,
-- if the selected voice model already exists, the app simply selects it,
-- if the voice catalog resource is missing, the app has built-in fallback Piper voices,
-- selecting a Piper voice from the wizard or voice dialog now forces engine/model settings to be saved.
-
-
-## First-run Piper fix
-
-Version 0.2.5 fixes the setup/reset wizard path:
-
-- when you reset settings and choose a Piper voice, the app now installs/repairs Piper,
-- downloads the selected voice model,
-- saves Piper as the active engine,
-- and stores the selected model path immediately.
-
-
-
-### Automatic system theme detection
-
-On first run, Dosty Speak now uses the operating system palette to choose the initial light/dark mode.
-
-The first-run wizard and settings dialog also apply the selected appearance immediately, so the dropdown no longer feels stale after switching theme.
-
-
-## First launch wizard
-
-On first launch, Dosty Speak asks for:
-
-- interface language,
-- initial voice,
-- light or dark mode.
-
-The language and appearance are applied immediately without requiring an app restart.
-
-If you choose a Piper voice, the app can immediately:
-
-1. install/repair Piper runtime,
-2. download the selected Piper voice model,
-3. configure the app to use that voice.
-
-You can also skip Piper during first launch and use:
-
-```text
-Voice → Install / repair Piper runtime…
-Voice → Select / download voice…
-```
-
-later.
-
-
-## Piper voices
-
-Dosty Speak can install/repair Piper runtime from inside the app:
-
-```text
-Voice → Install / repair Piper runtime…
-```
-
-Then download a voice model:
-
-```text
-Voice → Select / download voice…
-```
-
-Requirements:
-
-- Linux: `python3` and `python3-venv`
-- macOS: Python 3, recommended through Homebrew
-- Windows: Python available as `python`
-
-Native speech still works without Piper:
-
-- Linux: `espeak-ng`
-- macOS: `say`
-- Windows: `System.Speech`
-
----
-
-## Keyboard workflow
-
-- `Enter` in the input field: speak the current text
-- `Shift+Enter` in the input field: save text as phrase
-- `Tab`: switch between typing and phrase selection
-- Arrow keys in phrase list: select phrase
-- `Enter` in phrase list: speak selected phrase
-- `1–9` in phrase list: select visible phrase
-- `Alt+1–9`: speak visible phrase from anywhere
-- `Delete` in phrase list: delete selected phrase
-- `Ctrl+F`: search
-- `Ctrl+D`: dark mode
-- Right-click folder: rename/delete folder
-- Right-click phrase: phrase actions
-
----
-
-## Diagnostics
-
-Use:
-
-```text
-Help → Diagnostics…
-```
-
-It shows:
-
-- app version
-- build type and build date
-- compiler
-- Qt build/runtime version
-- operating system
-- CPU architecture
-- app data/resource paths
-
-Use the **Copy** button and paste the output into GitHub issues.
-
----
-
-## GitHub Releases
-
-Recommended files to upload:
-
-```text
-DostySpeak-linux-x86_64.AppImage
-DostySpeak-ubuntu-amd64.deb
-DostySpeak-linux-i386.tar.gz
-DostySpeak-windows-x86_64.zip
-DostySpeak-windows-i686.zip
-DostySpeak-macos-arm64.dmg
-DostySpeak-macos-x86_64.dmg
-```
-
-Important:
-
-- Build each platform on that platform when possible.
-- Windows/macOS need Qt deployment tools.
-- Do not upload only a raw `.exe` unless dependencies are bundled.
-- Piper voice models are large; the app can download them, so they do not need to be bundled by default.
-
----
-
-## Project structure
-
-```text
-.
-├── CMakeLists.txt
-├── src/
-├── resources/
-│   ├── i18n/
-│   └── voices/
-├── scripts/
-├── packaging/
-├── AUTHORS.md
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── NOTICE.md
-├── README.md
-└── THIRD_PARTY_NOTICES.md
-```
-
----
-
-## GitHub quick start
-
-```bash
-git init
-git add .
-git commit -m "Initial Dosty Speak release"
-git branch -M main
-git remote add origin git@github.com:<user>/dosty-speak.git
-git push -u origin main
-```
-
-
-
-
-
-### Windows installer license encoding and x86 PATH fix
-
-Version 0.2.32 fixes two Windows release issues:
-
-- NSIS now uses `packaging/windows/LICENSE-installer.txt`, an ASCII-safe installer license file, so the author name is not garbled on the license page.
-- x86 generated MSYS2 scripts now set `/usr/bin` in `PATH` before calling `pacman`/`grep`.
-
-There is also a new note about GUI toolkit alternatives:
-
-```text
-docs/GUI_TOOLKIT_OPTIONS.md
-```
-
-For real 32-bit Windows support, wxWidgets is probably a better long-term choice than Qt.
-
-
-### Windows x86 path fix v2
-
-Version 0.2.31 fixes the x86 build helper again.
-
-Instead of using `dirname "$0"` inside the generated bash script, PowerShell now passes the MSYS project path as the first argument:
-
-```bash
-PROJECT_DIR="$1"
-cd "$PROJECT_DIR"
-```
-
-This avoids both previous failures:
-
-```text
-dirname: command not found
-cd: null directory
-```
-
-
-### Windows x86 path quoting fix
-
-Version 0.2.30 fixes the x86 build script path issue.
-
-The generated x86 shell script is now written directly into the project folder and uses:
-
-```bash
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
-```
-
-So it no longer tries to run a broken command like:
-
-```text
-cd: $'\n/c/Users/.../dosty-speak\n': No such file or directory
-```
-
-This same self-location pattern is also used for the arm64 helper.
-
-
-### Windows x86 toolchain switch
-
-Version 0.2.29 changes the Windows x86 build strategy.
-
-Instead of relying only on the old `MINGW32` repository, the builder now tries:
-
-1. `CLANG32 + Qt 6`
-2. `CLANG32 + Qt 5`
-3. `MINGW32 + Qt 5`
-4. `MINGW32 + Qt 6`
-
-This means 32-bit Windows builds are no longer blocked just because `mingw-w64-i686-qt5-base` is missing from `MINGW32`.
-
-The x86 release path can now create:
-
-```text
-dist\DostySpeak-Portable-x86.zip
-dist\DostySpeak-Setup-x86.exe
-```
-
-if a usable 32-bit Qt toolchain is available.
-
-
-### Windows x86 reality check
-
-Version 0.2.28 makes Windows x86 handling clearer.
-
-On your current MSYS2 installation, this package is missing:
-
-```text
-mingw-w64-i686-qt5-base
-```
-
-That means Windows 32-bit Qt builds cannot be produced from the standard current MSYS2 repositories on your machine. The script now detects this and skips x86 cleanly instead of failing halfway.
-
-You can check x86 support manually:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-windows-x86-support.ps1
-```
-
-Recommended release path now:
-
-- Windows: ship `amd64` installer + portable ZIP
-- 32-bit work: optimize and test on 32-bit Linux first
-- Windows x86 later: use older archived Qt 5 toolchain, MXE, or a dedicated CI/toolchain if really needed
-
-Experimental Linux i386 helper:
-
-```bash
-chmod +x scripts/build-linux-i386.sh
-./scripts/build-linux-i386.sh
-```
-
-Run it inside a real 32-bit/i386 Linux environment or container.
-
-
-
-### Legacy FLTK GUI for older hardware
-
-Version 0.2.33 adds an experimental lightweight FLTK GUI in:
-
-```text
-legacy-fltk/
-```
-
-This is meant as the first step toward an old-hardware / 32-bit friendly frontend.
-It is much smaller than Qt and is a better candidate for future 32-bit Windows/Linux builds.
-
-Build on Linux:
-
-```bash
-chmod +x scripts/build-legacy-fltk-linux.sh
-./scripts/build-legacy-fltk-linux.sh
-```
-
-### Voice performance and volume settings
-
-Settings now include:
-
-- playback volume,
-- Piper quality/speed preset:
-  - Fast / weaker CPU,
-  - Balanced,
-  - Higher quality / slower.
-
-For weak CPUs, use the Fast preset. Piper can still be slow with medium models, but this gives a quick user-facing control and prepares the app for low-quality/fast voice models later.
-
-
-### Windows x86 legacy fallback
-
-Version 0.2.34 changes the x86 build path:
-
-1. Try Qt x86 first.
-2. If Qt x86 is unavailable, try the lightweight `legacy-fltk` GUI.
-3. If FLTK is available, create:
-
-```text
-dist\DostySpeak-Legacy-Portable-x86.zip
-```
-
-This is the practical path for older 32-bit Windows hardware while the main Qt app remains the modern 64-bit build.
-
-
-### Piper playback reliability fix on Windows
-
-Version 0.2.35 reverts Windows WAV playback to the reliable `System.Media.SoundPlayer` path.
-
-The previous Windows volume implementation used WPF `MediaPlayer`, which can fail or hang on some machines. Piper could generate audio but then not actually play it.
-
-Now:
-
-- Piper still generates `last.wav`,
-- Windows plays it through `SoundPlayer.PlaySync()`,
-- if Piper itself fails, details are written to:
-
-```text
-piper-last-error.txt
-```
-
-and included in diagnostics.
-
-The GUI volume setting remains, but on Windows WAV playback currently follows the system mixer volume. macOS/Linux can apply per-playback volume more directly.
-
-### Windows x86 status
-
-If your MSYS2 has no `clang32`, no i686 Qt and no i686 FLTK, the x86 build cannot produce a GUI binary from that toolchain. See:
-
-```text
-docs/WINDOWS_X86_NOTES.md
-```
-
-
-### Windows console window fix
-
-Version 0.2.36 fixes the extra CMD/terminal window on Windows.
-
-The application is now built as a Windows GUI subsystem app by passing `WIN32`
-to `add_executable` on Windows. PowerShell helper processes used for speech
-playback are also started with `CREATE_NO_WINDOW`.
-
-This prevents a console window from appearing whenever `dosty-speak.exe` is launched.
-
-
-### Pure Win32 x86 fallback
-
-Version 0.2.37 adds a pure Win32 legacy x86 fallback.
-
-If Qt x86 and FLTK x86 are both unavailable, the x86 builder now compiles:
-
-```text
-legacy-win32/main.cpp
-```
-
-directly with `mingw-w64-i686-gcc`.
-
-This produces:
-
-```text
-dist\DostySpeak-Legacy-Win32-Portable-x86.zip
-```
-
-It is a simpler old-hardware frontend using Windows SAPI directly. It has fewer features than the Qt app, but it does not need Qt, FLTK, Python, Piper, or any GUI toolkit package.
-
-
-### Windows x86 simplified to pure Win32
-
-Version 0.2.38 removes Qt/FLTK probing from the Windows x86 release path.
-
-The x86 build now directly builds the lightweight pure Win32 legacy frontend:
-
-```text
-legacy-win32/main.cpp
-```
-
-It uses static GCC linking:
-
-```text
--static -static-libgcc -static-libstdc++
-```
-
-so the generated EXE should no longer require DLLs like:
-
-```text
-libgcc_s_dw2-1.dll
-libstdc++-6.dll
-```
-
-Output:
-
-```text
-dist\DostySpeak-Legacy-Win32-Portable-x86.zip
-```
-
-
-### Keyboard controls and main sliders
-
-Version 0.2.39 improves both frontends:
-
-- 32-bit Win32 legacy:
-  - Tab switches between the input field and phrase list,
-  - Enter reads the input field or selected phrase,
-  - the hint text now describes this behavior.
-
-- 64-bit Qt:
-  - volume slider is visible directly in the main GUI,
-  - speed slider is visible directly in the main GUI.
-
-Important Piper note: the speed/quality preset changes how the generated speech sounds and plays, but real generation time mostly depends on the model size. For weak CPUs, use a `low / rychlejší` Piper voice instead of a `medium` voice.
-
-
-### Terminal release builder
-
-Version 0.2.40 adds an interactive terminal release builder:
+Open **Windows PowerShell** in the project folder and run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-release-terminal.ps1
 ```
 
-It asks what you want to build directly in the terminal:
+The script lets you choose:
 
-- amd64 / x86_64,
-- x86 / 32-bit legacy Win32,
-- arm64,
+- Windows 64-bit main app,
+- Windows 32-bit legacy app,
 - installer EXE,
 - portable ZIP.
 
-After selection, it runs the normal build scripts in the same terminal, so you see the full detailed build output instead of hiding it behind a small Windows GUI.
-
-The old checkbox GUI still exists, but the terminal builder is now the recommended Windows release workflow.
-
-
-### UI and release builder polish
-
-Version 0.2.41 cleans up several rough edges:
-
-- removed the visible Piper generation-speed warning from the main GUI,
-- added a proper `Folders/Složky` label above the folder list,
-- changed the phrase table header to `Hlášky`,
-- replaced the shortcuts message box with a cleaner scrollable dialog,
-- sorted downloadable voices alphabetically by language/name,
-- added more Piper voice entries and more low/faster voices,
-- cleaned up the terminal release builder text,
-- fixed a duplicate PowerShell `param(...)` block in the installer builder.
-
-
-### Application icon
-
-Version 0.2.42 adds a real Dosty Speak app icon for all platforms.
-
-Included assets:
+Outputs are created in:
 
 ```text
-resources/icons/dosty-speak.png
-resources/icons/dosty-speak.ico
-resources/icons/dosty-speak.icns
+dist\
 ```
 
-Platform integration:
+Typical files:
 
-- Windows executable resource icon,
-- NSIS installer icon,
-- Linux desktop file icon,
-- macOS bundle icon.
+```text
+DostySpeak-Setup-x64.exe
+DostySpeak-Portable-x64.zip
+DostySpeak-Legacy-Win32-Portable-x86.zip
+```
 
-The 32-bit/legacy and 64-bit builds share the same branding assets.
+### Clean Windows build cache
 
-
-### Windows terminal encoding fix
-
-Version 0.2.43 improves Windows PowerShell/terminal output.
-
-The build scripts now set the console to UTF-8:
+If Windows build starts failing after changes, clean the build folders first:
 
 ```powershell
-chcp 65001
-[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+powershell -ExecutionPolicy Bypass -File .\scripts\clean-windows-build.ps1
 ```
 
-The interactive release builder also uses mostly ASCII output text, because classic Windows PowerShell and some terminals can still render UTF-8 inconsistently depending on font and code page.
+Then run the release builder again.
 
+### Windows 32-bit note
 
-### About dialog and repository images
+The 32-bit Windows build is a separate **legacy Win32** frontend. It is intentionally limited and uses Windows SAPI directly. It does not use Qt, Piper or Python.
 
-Version 0.2.44 adds branding polish:
+---
 
-- the About dialog now shows the Dosty Speak photo/icon,
-- GitHub README displays the app logo,
-- `.github/assets/social-preview.png` is included for the GitHub repository social preview,
-- folder and phrase section headings now use the same QLabel style instead of mixing QLabel and table header styling.
+## macOS build
 
+### Requirements
 
-### Transparent logo and Linux release builder
+Install Homebrew first:  
+https://brew.sh/
 
-Version 0.2.45 updates the branding and Linux build tooling:
-
-- replaced the app icon everywhere with a transparent-background logo without text,
-- regenerated PNG/ICO/ICNS icon assets,
-- updated the README logo and GitHub social preview image,
-- added an interactive Linux release builder:
-
-```bash
-chmod +x scripts/build-linux-release-terminal.sh
-./scripts/build-linux-release-terminal.sh
-```
-
-The Linux builder lets you choose:
-
-- x86_64 / amd64,
-- i386 / 32-bit, when running inside a real 32-bit Linux environment,
-- portable tar.gz,
-- DEB,
-- RPM.
-
-Note: 32-bit Linux builds should be done in a real 32-bit chroot/container/VM because Qt multiarch cross-builds are unreliable.
-
-
-### Windows reinstall fix
-
-Version 0.2.46 improves reinstall/upgrade behavior on Windows.
-
-The NSIS installer now:
-
-- closes running `dosty-speak.exe` before copying files,
-- closes the 32-bit legacy executable if it is running,
-- enables overwrite mode,
-- deletes known locked runtime DLLs before copying,
-- schedules locked files for replacement/removal on reboot when needed.
-
-This fixes reinstall errors such as:
-
-```text
-Error opening file for writing:
-C:\Program Files\Dosty Speak\Qt6Core.dll
-```
-
-That usually happens when the previous Dosty Speak instance is still running and Windows keeps Qt DLLs locked.
-
-
-### Linux builder dependency install
-
-Version 0.2.47 improves the Linux release builder.
-
-If a required build tool is missing, for example `ninja`, the builder now offers to install build dependencies automatically with `sudo`.
-
-You can also install them directly:
-
-```bash
-chmod +x scripts/install-linux-build-deps.sh
-./scripts/install-linux-build-deps.sh
-```
-
-Then run:
-
-```bash
-./scripts/build-linux-release-terminal.sh
-```
-
-
-### macOS bundle install fix
-
-Version 0.2.48 fixes macOS builds after enabling `MACOSX_BUNDLE`.
-
-CMake now installs app bundles correctly:
-
-```cmake
-install(TARGETS dosty-speak
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION bin
-)
-```
-
-The macOS installer script now copies the generated `.app` bundle instead of expecting a raw `build/dosty-speak` executable.
-
-Run:
+Then run from the project folder:
 
 ```bash
 chmod +x scripts/install-macos.sh
@@ -1202,97 +110,1215 @@ chmod +x scripts/install-macos.sh
 open "$HOME/Applications/Dosty Speak.app"
 ```
 
-There is also a release helper:
+This builds and installs:
+
+```text
+~/Applications/Dosty Speak.app
+```
+
+### macOS release package
+
+To create a release package:
 
 ```bash
 chmod +x scripts/build-macos-release-terminal.sh
 ./scripts/build-macos-release-terminal.sh
 ```
 
-
-### macOS first-run crash fix
-
-Version 0.2.49 fixes a macOS bundle packaging issue.
-
-The app resources were being copied into:
+Outputs are created in:
 
 ```text
-Dosty Speak.app/Contents/MacOS/resources
+dist/
 ```
 
-That can break `macdeployqt` / codesign and can make the app close immediately on launch.
-
-Resources now go into the correct bundle location:
-
-```text
-Dosty Speak.app/Contents/Resources/resources
-```
-
-The macOS installer now also:
-
-- removes old broken `Contents/MacOS/resources`,
-- runs `macdeployqt` before the final resource copy,
-- removes extended attributes with `xattr -cr`,
-- ad-hoc signs the finished app bundle.
-
-Run:
-
-```bash
-chmod +x scripts/install-macos.sh
-./scripts/install-macos.sh
-open "$HOME/Applications/Dosty Speak.app"
-```
-
-If it still closes immediately, run:
+If the app closes immediately, run:
 
 ```bash
 chmod +x scripts/debug-macos-run.sh
 ./scripts/debug-macos-run.sh
 ```
 
-and send the output.
+and check the terminal output.
 
+---
 
-### Windows build fix
+## Linux build
 
-Version 0.2.51 fixes a Windows CMake/resource build regression.
+### Quick dependency install
 
-The Windows icon resource is no longer added through a generator expression inside `add_executable`. Instead, CMake now creates the `.rc` file with `configure_file()` and adds it through a normal `if(WIN32)` source variable.
+From the project folder:
 
-This should fix Windows build errors around the app icon/resource file.
+```bash
+chmod +x scripts/install-linux-build-deps.sh
+./scripts/install-linux-build-deps.sh
+```
 
-If your local tree has an old broken CMake cache, clean it once:
+### Build packages
+
+Run the interactive Linux builder:
+
+```bash
+chmod +x scripts/build-linux-release-terminal.sh
+./scripts/build-linux-release-terminal.sh
+```
+
+The script lets you choose:
+
+- x86_64 / amd64,
+- i386 / 32-bit when running inside a real 32-bit Linux environment,
+- portable tar.gz,
+- DEB,
+- RPM.
+
+Outputs are created in:
+
+```text
+dist/
+```
+
+Typical files:
+
+```text
+DostySpeak-Linux-x86_64.tar.gz
+DostySpeak-0.2.xx-x86_64.deb
+DostySpeak-0.2.xx-x86_64.rpm
+```
+
+### Linux 32-bit note
+
+For 32-bit Linux builds, use a real 32-bit chroot, container or VM. Cross-building Qt from a normal 64-bit system is unreliable.
+
+---
+
+## GitHub release assets
+
+Recommended first release assets:
+
+```text
+DostySpeak-Setup-x64.exe
+DostySpeak-Portable-x64.zip
+DostySpeak-Legacy-Win32-Portable-x86.zip
+DostySpeak-macOS-*.tar.gz
+DostySpeak-*.dmg
+DostySpeak-Linux-x86_64.tar.gz
+*.deb
+*.rpm
+```
+
+---
+
+## Troubleshooting
+
+### Windows installer cannot overwrite files
+
+Close Dosty Speak and retry. If needed:
+
+```powershell
+taskkill /F /T /IM dosty-speak.exe
+```
+
+### Windows build still fails
+
+Clean first:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\clean-windows-build.ps1
 ```
 
-Then build again:
+Then run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\build-windows-release-terminal.ps1
 ```
 
+### macOS app closes immediately
 
-### Windows NSIS uninstall function fix
+Run:
 
-Version 0.2.52 fixes NSIS installer generation.
-
-NSIS requires functions called from the uninstall section to use the `un.` prefix. The installer now defines both:
-
-```nsis
-Function CloseRunningDostySpeak
-Function un.CloseRunningDostySpeak
+```bash
+./scripts/debug-macos-run.sh
 ```
 
-and the uninstall section correctly calls:
+### Linux builder says `Missing tools`
 
-```nsis
-Call un.CloseRunningDostySpeak
+Run:
+
+```bash
+./scripts/install-linux-build-deps.sh
 ```
 
-This fixes the build error:
+---
+
+## Changelog
+
+Detailed version history is in:
 
 ```text
-Call must be used with function names starting with "un." in the uninstall section.
+CHANGELOG.md
 ```
+
+
+### Windows LTSC Piper note
+
+Windows 10 2019 LTSC may not have `winget`, and Python installation can be problematic. On Windows, Dosty Speak now installs Piper from the standalone official Piper Windows runtime instead of using Python/pip.
+
+More details:
+
+```text
+docs/WINDOWS_PIPER_LTSC.md
+```
+
+
+### MSYS2 keyring/database repair
+
+If Windows build fails with MSYS2 PGP signature errors such as `unknown trust` or `invalid or corrupted database`, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\repair-msys2-keyring.ps1
+```
+
+Then run the Windows builder again.
+
+More details:
+
+```text
+docs/MSYS2_KEYRING_REPAIR.md
+```
+
+
+### Windows LTSC Piper runtime note
+
+If Piper on Windows 10 LTSC fails with missing DLLs such as:
+
+```text
+VCRUNTIME140.dll
+MSVCP140.dll
+```
+
+install Microsoft Visual C++ Redistributable x64:
+
+```text
+https://aka.ms/vs/17/release/vc_redist.x64.exe
+```
+
+Dosty Speak tries to install it automatically when Piper is configured, but Windows may ask for administrator permission.
+
+More details:
+
+```text
+docs/WINDOWS_PIPER_LTSC.md
+```
+
+
+### Windows Piper VC++ Runtime helper
+
+On Windows 10 LTSC, Piper may need Microsoft Visual C++ Redistributable x64.
+
+Inside the app, use:
+
+```text
+Voice -> Install Microsoft VC++ Runtime
+```
+
+The Windows installer also includes an optional component for the same runtime.
+
+
+### Online voice engine
+
+Dosty Speak also includes an optional online Google voice engine.
+
+Use it in:
+
+```text
+Voice -> Select voice -> Online Google voice
+```
+
+It requires internet and is less reliable than Piper or native system voices.
+
+Details:
+
+```text
+docs/ONLINE_VOICES.md
+```
+
+
+### Speech engines
+
+Dosty Speak now includes these speech engines:
+
+```text
+Native system voice
+Piper
+Online Google voice
+eSpeak NG
+```
+
+More details:
+
+```text
+docs/SPEECH_ENGINES.md
+```
+
+
+### Microsoft Edge online voice
+
+Another optional online synthesizer is available through `edge-tts`:
+
+```bash
+python -m pip install edge-tts
+```
+
+Then select:
+
+```text
+Voice -> Select voice -> Microsoft Edge online voice
+```
+
+Details:
+
+```text
+docs/EDGE_TTS.md
+```
+
+
+### Optional dependency installation
+
+Dosty Speak can help install optional engines:
+
+```text
+Voice -> Install Edge TTS
+Voice -> Install eSpeak NG
+```
+
+More details:
+
+```text
+docs/DEPENDENCIES.md
+```
+
+
+### First-run wizard
+
+The first-run wizard now works in two steps:
+
+1. choose language, appearance and which speech engines to install,
+2. choose the default synthesizer and voice.
+
+When Czech is selected, starter phrases are created in Czech.
+
+
+### First-run engine picker
+
+The first-run wizard now has a nicer speech engine picker:
+
+- engine list with install checkboxes,
+- description and compatibility card,
+- voice selection on the right,
+- radio-style default voice choice,
+- extra Piper voice downloads.
+
+On macOS, eSpeak NG installation now tries common Homebrew paths and can open the Homebrew installer in Terminal when Homebrew is missing.
+
+
+### Three-step first-run wizard
+
+The first-run setup is now split into three clearer steps:
+
+1. language and appearance,
+2. speech engine and voice installation,
+3. default voice selection from installed/available voices only.
+
+The system theme detection on macOS now checks the real macOS appearance setting, and Edge TTS now passes text through a UTF-8 file to avoid broken Czech characters.
+
+
+### Keyboard-first typing mode
+
+The main typing field now keeps keyboard focus by default:
+
+- `Tab` completes the current word from saved phrases,
+- `Up` / `Down` browses saved phrases while keeping focus in the input,
+- `Enter` speaks the current input,
+- `Shift + Enter` saves the current input,
+- `Esc` unlocks direct phrase-list selection.
+
+Autocomplete is local and privacy-friendly. It learns from saved phrases and phrase usage counts.
+
+
+### Autocomplete preview and cycling
+
+Autocomplete is still fully local and privacy-friendly.
+
+- the hint below the input shows what Tab can complete,
+- repeated Tab cycles through the next best suggestions,
+- suggestions come from saved phrases, usage counts and a small built-in starter word set,
+- no online model is downloaded for this feature.
+
+During first-run setup, if Piper is selected for installation, at least one Piper voice must also be selected.
+
+
+### Voice presets
+
+Voice and synthesizer settings can now be saved as presets.
+
+- open `Voice -> Select voice`,
+- choose engine and voice,
+- click `Save as preset`,
+- switch presets later from the main window next to the volume control.
+
+The Voice dialog now focuses on voice selection and presets. Engine installation and voice downloads are handled from the separate `Voice -> Install speech engines` window.
+
+Autocomplete preview is more visible, and repeated Tab cycling no longer resets after the first completion.
+
+
+### macOS compile fix for voice presets
+
+Version 0.2.68 fixes a build error caused by a misplaced preset button connection in the settings dialog.
+
+
+### Version 0.3.0
+
+This release cleans up the voice workflow:
+
+- Voice menu has two main actions: configure voice, and install/download voices.
+- Configure voice contains synthesizer, concrete voice, engine-specific settings and preset saving.
+- Install/download voices contains synthesizer installation and Piper voice downloads.
+- Tab autocomplete cycling was fixed so repeated Tab continues cycling suggestions.
+
+
+### UI polish for voice setup and autocomplete
+
+Version 0.3.1 improves several UI details:
+
+- combo boxes show a visible dropdown arrow again,
+- autocomplete shows the main completion next to the input field,
+- alternative autocomplete suggestions are listed below,
+- the first-run setup shows the app logo,
+- speech engine descriptions now use clearer pros, cons and platform compatibility sections.
+
+
+### Autocomplete popup polish
+
+Version 0.3.2 changes autocomplete to a popup-style suggestion list below the input, closer to classic desktop autocomplete behavior. It also restores more usable combo-box dropdown affordances and improves the first-run speech engine layout.
+
+
+### macOS install verification
+
+The macOS installer now closes any running Dosty Speak instance before replacing the app bundle and prints the source and installed app version.
+
+To force the first-run wizard again on macOS:
+
+```bash
+chmod +x scripts/reset-macos-settings.sh
+./scripts/reset-macos-settings.sh
+open "$HOME/Applications/Dosty Speak.app"
+```
+
+
+### Autocomplete list is now part of the main layout
+
+Version 0.3.4 changes the autocomplete UI from an inline badge to a real suggestion list directly below the text input. This avoids macOS popup quirks and makes the behavior closer to a classic desktop autocomplete list.
+
+
+## Dosty Speak Mobile
+
+Experimental mobile scaffold is included in:
+
+```text
+mobile/
+```
+
+Build scripts:
+
+```bash
+scripts/build-mobile-preview-macos.sh
+scripts/build-android-apk.sh
+scripts/build-ios.sh
+```
+
+Documentation:
+
+```text
+docs/MOBILE.md
+```
+
+The first mobile target uses a Qt Quick / QML touch UI and platform-native speech bridges.
+
+
+## Mobile build, Android and iOS
+
+Mobile code lives in:
+
+```text
+mobile/
+```
+
+The mobile app uses Qt Quick/QML. The desktop Qt Widgets UI is not used on mobile.
+
+### 1. Install/check dependencies on macOS
+
+Run:
+
+```bash
+cd ~/Dev/dosty-speak
+chmod +x scripts/install-mobile-build-deps-macos.sh
+./scripts/install-mobile-build-deps-macos.sh
+```
+
+The script installs/checks what it reasonably can:
+
+```text
+Homebrew
+Xcode Command Line Tools
+cmake
+ninja
+desktop Qt for macOS preview
+Android Studio
+JDK 17
+Android platform tools
+```
+
+The script also detects and prints paths for:
+
+```text
+Android SDK
+Android NDK
+Qt Android kit
+Qt iOS kit
+Xcode
+```
+
+Important limitation: Qt Android and Qt iOS kits are not available from Homebrew Qt. Install them with the official Qt online installer when the script says they are missing.
+
+### 2. Build mobile preview on macOS
+
+This tests the mobile UI as a normal macOS app:
+
+```bash
+chmod +x scripts/build-mobile-preview-macos.sh
+./scripts/build-mobile-preview-macos.sh
+open "build-mobile-preview-macos/dosty-speak-mobile.app"
+```
+
+If the app closes immediately, run it directly to see the log:
+
+```bash
+chmod +x scripts/run-mobile-preview-macos.sh
+./scripts/run-mobile-preview-macos.sh
+```
+
+### 3. Android APK
+
+Install through Android Studio first if missing:
+
+```text
+Android SDK
+Android NDK
+Android platform
+Qt Android arm64 kit
+```
+
+Then run:
+
+```bash
+chmod +x scripts/print-mobile-env-hints.sh
+./scripts/print-mobile-env-hints.sh
+```
+
+Copy/export the printed variables if needed, then build:
+
+```bash
+chmod +x scripts/build-android-apk.sh
+./scripts/build-android-apk.sh
+```
+
+The APK is usually created under:
+
+```text
+build-android-arm64-v8a/android-build/build/outputs/apk/
+```
+
+Android speech uses native Android `TextToSpeech`:
+
+```text
+mobile/android/src/cz/dosty/speak/DostyTts.java
+```
+
+### 4. iOS build
+
+Install first:
+
+```text
+Full Xcode
+Qt iOS kit
+Apple signing/team setup
+```
+
+Then run:
+
+```bash
+chmod +x scripts/print-mobile-env-hints.sh
+./scripts/print-mobile-env-hints.sh
+
+chmod +x scripts/build-ios.sh
+./scripts/build-ios.sh
+```
+
+If signing fails, open the generated Xcode project and select your Team manually:
+
+```bash
+open "build-ios/DostySpeakMobile.xcodeproj"
+```
+
+iOS speech uses native `AVSpeechSynthesizer`:
+
+```text
+mobile/IosTts.mm
+```
+
+### Mobile feature status
+
+Works in the mobile scaffold:
+
+```text
+touch UI
+large text input
+Speak / Save / Stop buttons
+quick phrase buttons
+phrase cards
+language selector
+speech speed slider
+Android native TextToSpeech bridge
+iOS native AVSpeechSynthesizer bridge
+```
+
+Still planned:
+
+```text
+persistent mobile phrase storage
+full mobile preset management
+mobile autocomplete from saved phrases
+Piper as native embedded mobile engine
+online Google/Edge mobile voices
+```
+
+Desktop Python/Piper/edge-tts cannot be copied 1:1 to iOS and Android because mobile systems do not allow the same free runtime installation and external process execution as desktop systems.
+
+
+
+## Terminal builders
+
+There are terminal builders with checkbox-style selection.
+
+### macOS
+
+```bash
+cd ~/Dev/dosty-speak
+chmod +x scripts/build-terminal-macos.sh
+./scripts/build-terminal-macos.sh
+```
+
+The macOS builder can ask for:
+
+```text
+dependencies
+macOS desktop app
+mobile preview for this Mac
+Android APK
+iOS app / Xcode project
+desktop release bundle
+mobile preview package
+```
+
+### Linux
+
+```bash
+chmod +x scripts/build-terminal-linux.sh
+./scripts/build-terminal-linux.sh
+```
+
+The Linux builder can ask for:
+
+```text
+dependencies
+desktop amd64
+desktop i386, only inside a real 32-bit environment
+portable tar.gz
+DEB
+RPM
+mobile preview
+```
+
+### Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
+```
+
+The Windows builder can ask for:
+
+```text
+dependencies
+amd64 build
+x86 legacy build
+installer EXE
+portable ZIP
+mobile preview
+```
+
+## Mobile preview note
+
+For the macOS mobile preview, prefer this:
+
+```bash
+./scripts/build-mobile-preview-macos.sh
+./scripts/run-mobile-preview-macos.sh
+```
+
+Do not rely on `open build-mobile-preview-macos/dosty-speak-mobile.app` while using Homebrew Qt. Running directly through `run-mobile-preview-macos.sh` sets the Qt/QML runtime paths and gives useful logs.
+
+
+
+### Bash 3.2 compatible builders
+
+macOS ships an old Bash 3.2 by default. The terminal builders avoid associative arrays so they run with the system `/bin/bash` without requiring a newer shell.
+
+
+### macOS builder behavior
+
+The macOS terminal builder now skips Android/iOS targets instead of aborting when their SDKs are missing.
+
+Android requires all three:
+
+```text
+Android SDK
+Android NDK
+Qt Android kit
+```
+
+iOS requires:
+
+```text
+Full Xcode
+Qt iOS kit
+```
+
+Homebrew can install helper tools, but Qt Android/iOS kits must be installed with the official Qt online installer. For mobile preview on Mac, use:
+
+```bash
+./scripts/build-mobile-preview-macos.sh
+./scripts/run-mobile-preview-macos.sh
+```
+
+Packaging the mobile preview `.app` with Homebrew Qt is optional and can print many missing optional Qt module warnings.
+
+
+
+### Manual dependency pauses
+
+When Android or iOS is selected in the macOS terminal builder and something cannot be installed automatically, the script now pauses and gives step-by-step instructions. After you finish the manual step, return to Terminal and press Enter. The script checks again and continues when the required tools are present.
+
+You can quit the paused builder by typing:
+
+```text
+q
+```
+
+
+
+### Qt mobile kit validation
+
+Android and iOS builders now validate that the selected Qt mobile kit actually contains:
+
+```text
+lib/cmake/Qt6/Qt6Config.cmake
+```
+
+Android SDK and NDK alone are not enough. You also need the Qt Android kit from the Qt online installer.
+
+
+### Mobile build automation
+
+The Android builder now uses Qt's own Android CMake toolchain:
+
+```text
+<Qt Android kit>/lib/cmake/Qt6/qt.toolchain.cmake
+```
+
+It also detects the matching Qt host kit, usually:
+
+```text
+~/Qt/<version>/macos
+```
+
+This avoids the common `Could not find Qt6Config.cmake` failure caused by using only the Android NDK toolchain.
+
+
+
+### Mobile preview diagnostics
+
+If the macOS mobile preview builds but does not open, run:
+
+```bash
+./scripts/run-mobile-preview-macos.sh
+```
+
+For full Qt/QML diagnostics:
+
+```bash
+./scripts/diagnose-mobile-preview-macos.sh
+```
+
+The preview scripts now prefer the official Qt macOS kit from `~/Qt/<version>/macos` over Homebrew Qt when it exists.
+
+
+### Mobile QML resource fix
+
+The mobile app now embeds `qml/main.qml` explicitly through `qt_add_resources` and also copies it into the app bundle as a fallback. The macOS mobile preview script cleans the build folder before rebuilding, so stale resource state should not survive between runs.
+
+Android packaging no longer ships an empty custom `mobile/android/build.gradle`; Qt is allowed to generate the correct Gradle project and `assembleRelease` task.
+
+
+### Android signed APK
+
+The Android build now signs the generated APK with a local debug keystore so it can be installed for testing.
+
+Expected installable output:
+
+```text
+dist/android/DostySpeak-Mobile-arm64-v8a-debug-signed.apk
+```
+
+This is a debug-signed test package, not a Play Store release signing setup.
+
+
+### Graphical terminal builders with logs
+
+The terminal builders now support keyboard navigation and automatic logs.
+
+macOS:
+
+```bash
+./scripts/build-terminal-macos.sh
+```
+
+Linux:
+
+```bash
+./scripts/build-terminal-linux.sh
+```
+
+Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
+```
+
+Controls:
+
+```text
+Up/Down  move selection
+Space    toggle selected item
+Enter    start build
+a        toggle all
+q        quit
+```
+
+Build logs are saved automatically:
+
+```text
+logs/macos-build-YYYYMMDD-HHMMSS.log
+logs/linux-build-YYYYMMDD-HHMMSS.log
+logs/windows-build-YYYYMMDD-HHMMSS.log
+```
+
+The latest log shortcuts are:
+
+```text
+logs/latest-macos-build.log
+logs/latest-linux-build.log
+logs/latest-windows-build.log
+```
+
+During non-interactive build steps, the terminal shows an indeterminate progress bar and a live console tail.
+
+
+### macOS builder arrow and mouse controls
+
+The macOS terminal builder supports:
+
+```text
+Up/Down  move selection
+Space    toggle highlighted item
+1-6      toggle item by number
+Mouse    click item to select/toggle, where supported by the terminal
+Enter    start build
+a        toggle all
+l        open logs folder
+q        quit
+```
+
+The arrow key reader handles both common macOS terminal escape variants:
+
+```text
+ESC [ A / ESC [ B
+ESC O A / ESC O B
+```
+
+Unknown escape fragments are ignored so arrow keys should not accidentally trigger `a` / toggle-all.
+
+
+### Single source of version
+
+The app version is stored in one file:
+
+```text
+VERSION
+```
+
+CMake reads this file for desktop and mobile builds. Build scripts also read it through:
+
+```text
+scripts/version.sh
+```
+
+This keeps package names, logs and app metadata aligned.
+
+
+### macOS builder navigation fallback
+
+If arrow keys do not work in a specific terminal, use:
+
+```text
+j  move down
+k  move up
+```
+
+The builder uses raw terminal input so macOS arrow escape sequences should no longer trigger the `a` toggle-all action.
+
+
+### macOS builder uses curses
+
+The macOS terminal builder now uses a small Python/curses UI instead of hand-parsed terminal escape sequences. This is more reliable for arrow keys and prevents broken layout caused by wrapped ANSI output.
+
+Controls:
+
+```text
+Up/Down  move
+j/k      move fallback
+Space    toggle
+1-6      toggle by number
+Mouse    click item where supported
+Enter    continue
+a        toggle all
+l        open logs
+q        quit
+```
+
+
+### Build config diagnostics
+
+If a builder step fails before showing a clear compiler error, run:
+
+```bash
+./scripts/diagnose-build-config.sh
+```
+
+This checks that the central `VERSION` file is correctly wired into both desktop and mobile CMake projects.
+
+
+### iOS SDK detection
+
+If iOS build fails, run:
+
+```bash
+./scripts/diagnose-ios-build-env.sh
+```
+
+The iOS builder automatically checks that `xcode-select` points to full Xcode and uses the real iPhoneOS SDK path from:
+
+```bash
+xcrun --sdk iphoneos --show-sdk-path
+```
+
+This avoids the CMake error:
+
+```text
+iphoneos is not an iOS SDK
+```
+
+
+### Build overlay progress
+
+The macOS terminal builder shows a build overlay while each non-interactive step runs.
+
+It includes:
+
+```text
+current app version
+current step / total selected steps
+overall progress percent
+current step progress percent
+live console output
+log path
+```
+
+Progress is estimated from known build phases found in the log, for example CMake configure/generate, compile, macdeployqt, Android APK creation and APK signing.
+
+
+### iOS signing and password prompts
+
+The animated build overlay must not run `sudo`, because password prompts can be hidden by the live redraw.
+
+For iOS setup, run this manually once:
+
+```bash
+./scripts/use-full-xcode-macos.sh
+```
+
+For device builds, iOS signing also needs an Apple Development Team ID:
+
+```bash
+export APPLE_DEVELOPMENT_TEAM="YOURTEAMID"
+./scripts/build-ios.sh
+```
+
+Without `APPLE_DEVELOPMENT_TEAM`, the script generates the Xcode project and stops before compiling/signing. Open the project in Xcode and select your Team in Signing & Capabilities.
+
+
+### Non-flicker build viewer
+
+The macOS terminal builder uses a Python/curses log viewer for non-interactive build steps. It updates the screen in-place instead of clearing and redrawing from shell, so it should not flash aggressively.
+
+Interactive steps, such as dependency installation or iOS signing, are not run inside the animated viewer so password prompts stay usable.
+
+
+### Mobile preview behavior
+
+In the mobile preview, tapping a saved phrase or preset now puts it into the text field and immediately plays it.
+
+The desktop macOS preview uses the native `/usr/bin/say` command. Android uses the native Android TextToSpeech bridge. iOS uses the native AVSpeechSynthesizer bridge.
+
+
+## Build everything through the terminal builder
+
+Use the terminal builder as the main entry point. Pick what to compile inside the menu.
+
+macOS:
+
+```bash
+cd ~/Dev/dosty-speak
+chmod +x scripts/build-terminal-macos.sh
+./scripts/build-terminal-macos.sh
+```
+
+Linux:
+
+```bash
+cd ~/dosty-speak
+chmod +x scripts/build-terminal-linux.sh
+./scripts/build-terminal-linux.sh
+```
+
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\dosty-speak
+powershell -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
+```
+
+There is also a small OS-detecting launcher for macOS/Linux:
+
+```bash
+./scripts/start-builder.sh
+```
+
+You should not need to run the individual build scripts manually during normal use.
+
+
+### Mobile bridge diagnostics
+
+If mobile preview says `ReferenceError: bridge is not defined`, run:
+
+```bash
+./scripts/diagnose-mobile-bridge.sh
+```
+
+The mobile app must create `MobileBridge` in `main_mobile.cpp` and expose it to QML as:
+
+```cpp
+engine.rootContext()->setContextProperty(QStringLiteral("bridge"), &bridge);
+```
+
+
+### Desktop CMake diagnostics
+
+If the macOS desktop build stops immediately after Homebrew messages, check the desktop CMake file:
+
+```bash
+./scripts/diagnose-desktop-cmake.sh
+```
+
+This verifies that the root `CMakeLists.txt` parses and configures correctly.
+
+
+### macOS desktop release output
+
+The macOS desktop build installs the app to:
+
+```bash
+~/Applications/Dosty Speak.app
+```
+
+To put release files into `dist`, select this builder option too:
+
+```text
+Create macOS desktop release package in dist
+```
+
+It creates:
+
+```text
+dist/DostySpeak-macOS-<version>.zip
+dist/DostySpeak-macOS-<version>.dmg
+```
+
+
+### macOS desktop release behavior
+
+The macOS desktop builder now always creates release files in `dist` as part of the desktop build:
+
+```text
+dist/DostySpeak-macOS-<version>.zip
+dist/DostySpeak-macOS-<version>.dmg
+```
+
+The script prefers the official Qt macOS kit from `~/Qt/<version>/macos` when available, because Homebrew Qt often causes noisy `macdeployqt` dependency-copy errors.
+
+
+### Mobile preview run behavior
+
+The builder launches the mobile preview in the background so the builder can continue.
+For a blocking debug run, use:
+
+```bash
+DOSTY_WAIT_MOBILE_PREVIEW=1 ./scripts/run-mobile-preview-macos.sh
+```
+
+The runtime log is written to:
+
+```text
+/tmp/dosty-speak-mobile-preview.log
+```
+
+
+### Android crash diagnostics
+
+Install only the signed APK from:
+
+```text
+dist/android/DostySpeak-Mobile-<version>-arm64-v8a-debug-signed.apk
+```
+
+Do not install `android-build-release-unsigned.apk`.
+
+If Android still shows a fatal error, connect the phone by USB and run:
+
+```bash
+./scripts/android-logcat-dosty.sh
+```
+
+Then open the app and send the log output.
+
+
+### Clean macOS desktop reinstall
+
+If the builder appears to freeze while the desktop app opens, use:
+
+```bash
+./scripts/reinstall-macos-desktop-clean.sh
+```
+
+The installer does not launch the GUI app during verification. It only checks that the app binary exists and is executable.
+
+
+### Android crash log capture
+
+If Android shows “fatal error and cannot continue”, connect the phone by USB with USB debugging enabled and run:
+
+```bash
+./scripts/capture-android-crash-log.sh
+```
+
+It creates:
+
+```text
+logs/dosty-speak-<version>-android-crash-<date>.log
+logs/dosty-speak-<version>-android-crash-<date>-filtered.log
+```
+
+Send the filtered log first.
+
+### Install Android APK to phone
+
+```bash
+./scripts/install-android-apk.sh
+```
+
+This installs the latest signed APK from `dist/android`.
+
+### Prepare iPhone build
+
+```bash
+./scripts/prepare-ios-iphone.sh
+```
+
+It checks Xcode and the Qt iOS kit, generates the Xcode project and opens Xcode so you can select your Team and run it on your iPhone.
+
+
+### Qt iOS kit install/check
+
+The script can check for the Qt iOS kit and try to install it through Qt Maintenance Tool:
+
+```bash
+./scripts/install-qt-ios-kit-macos.sh
+```
+
+If Qt requires login or interactive component selection, the script opens Maintenance Tool and waits.
+
+### Prepare and open iPhone project in Xcode
+
+```bash
+./scripts/prepare-ios-iphone.sh
+```
+
+This checks Xcode, checks or installs the Qt iOS kit, generates `build-ios/DostySpeakMobile.xcodeproj` and opens it in Xcode.
+
+For a real iPhone, Xcode still requires selecting a Team in Signing & Capabilities.
+
+
+### Builder menu
+
+The macOS terminal builder is now grouped and scrollable so the options do not overflow the terminal.
+
+Useful presets inside the builder:
+
+```text
+1 Desktop release
+2 Android debug
+3 iPhone prep
+4 Everything useful
+```
+
+Use ↑/↓ or j/k to move, Space to toggle, Enter to start.
+
+
+### Android crash fixed in 0.3.39
+
+If Android closed right after the splash screen with this log:
+
+```text
+QtLoader: The main library name is null or empty.
+System.exit called, status: -1
+```
+
+the APK manifest was missing Qt's `android.app.lib_name` metadata. Version 0.3.39 adds that metadata and the install helper now removes the old Qt example package id before installing the fresh APK.

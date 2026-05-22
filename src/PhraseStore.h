@@ -16,6 +16,7 @@ struct Phrase {
 class PhraseStore {
 public:
     static QVector<Phrase> load();
+    static QVector<Phrase> defaultPhrasesForLanguage(const QString &languageCode);
     static void save(const QVector<Phrase> &phrases);
 
 private:

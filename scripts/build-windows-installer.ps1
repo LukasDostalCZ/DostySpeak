@@ -28,6 +28,11 @@ if (-not $Installer -and -not $Portable) {
 }
 
 $ProjectDir = (Resolve-Path ".").Path
+$VersionFile = Join-Path $ProjectDir "VERSION"
+$AppVersion = "0.3.51"
+if (Test-Path $VersionFile) { $AppVersion = (Get-Content $VersionFile -Raw).Trim() }
+$AppVersionNumeric = $AppVersion
+if ($AppVersionNumeric -match '^([0-9]+)\.([0-9]+)\.([0-9]+)$') { $AppVersionNumeric = "$AppVersion.0" }
 $DistRoot = Join-Path $ProjectDir "dist"
 
 if ($Arch -eq "x86") {
@@ -104,6 +109,8 @@ if ($Portable) { Write-Host ("  Portable: " + $PortableOut) }
   "/DOUTPUT_EXE=$InstallerOut" `
   "/DLICENSE_FILE=$LicenseFile" `
   "/DDEFAULT_INSTALL_DIR=$DefaultInstallDir" `
+  "/DAPP_VERSION=$AppVersion" `
+  "/DAPP_VERSION_NUMERIC=$AppVersionNumeric" `
   $NsiScript
 
 if (!(Test-Path $InstallerOut)) { throw "Installer was not created: $InstallerOut" }

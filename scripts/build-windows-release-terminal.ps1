@@ -4,8 +4,8 @@
 
 # Keep Windows PowerShell console output readable with UTF-8 text.
 try {
-    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::now($false)
-    $OutputEncoding = [System.Text.UTF8Encoding]::now($false)
+    [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+    $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
     chcp 65001 | Out-Null
 } catch {
     # Non-fatal on older shells.
@@ -26,10 +26,10 @@ function Ask-YesNo([string]$Question, [bool]$DefaultYes = $true) {
             "y" { return $true }
             "yes" { return $true }
             "a" { return $true }
-            "yes" { return $true }
+            "ano" { return $true }
             "n" { return $false }
             "no" { return $false }
-            "no" { return $false }
+            "ne" { return $false }
             default { Write-Host "Please answer y/n, or press Enter for the default." -ForegroundColor Yellow }
         }
     }
@@ -84,6 +84,10 @@ Write-Host ("  Portable ZIP:  " + ($(if ($wantPortable) { "yes" } else { "no" })
 if (-not (Ask-YesNo "Continue?" $true)) {
     Write-Host "Cancelled." -ForegroundColor Yellow
     exit 0
+}
+
+if (Ask-YesNo "Repair MSYS2 keyring/database before build? Use this if LTSC/MSYS2 has PGP signature errors." $false) {
+    powershell -ExecutionPolicy Bypass -File (Join-Path $ProjectDir "scripts\repair-msys2-keyring.ps1")
 }
 
 $artifactArgs = @()

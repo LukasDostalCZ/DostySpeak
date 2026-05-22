@@ -20,6 +20,10 @@ void I18n::load(const QString &languageCode)
     // are missing or when the app is launched from an unusual directory.
     strings_.insert("hint.piperSpeed", "");
     strings_.insert("hint.main", "Type a sentence and press Enter. Shift+Enter saves it as a phrase.");
+    strings_.insert("autocomplete.hint", "Tab completes a word. Press Tab again to cycle more suggestions. Arrows browse saved phrases.");
+    strings_.insert("autocomplete.preview", "Tab completes:");
+    strings_.insert("autocomplete.alternatives", "More suggestions:");
+    strings_.insert("firstRun.piperVoiceRequired", "Piper is selected, but no voice is checked for download.");
     strings_.insert("placeholder.input", "Type what you want to say…");
     strings_.insert("placeholder.search", "Search…");
     strings_.insert("button.speak", "Speak");
@@ -87,6 +91,10 @@ void I18n::load(const QString &languageCode)
 
     strings_.insert("menu.renameFolder", "Rename folder…");
     strings_.insert("menu.deleteFolder", "Delete folder");
+    strings_.insert("status.typingLockedMode", "Typing mode: Tab completes a word, arrows browse saved phrases, Esc unlocks phrase selection.");
+    strings_.insert("status.keyboardUnlocked", "Phrase selection unlocked. Esc or Tab returns to typing.");
+    strings_.insert("status.autocompleteApplied", "Word completed from saved phrases.");
+    strings_.insert("status.noAutocomplete", "No suitable completion found.");
     strings_.insert("status.typingMode", "Typing mode — Enter speaks the text.");
     strings_.insert("status.phraseMode", "Phrase mode — arrows select a phrase, Enter speaks it, Tab returns to typing.");
     strings_.insert("status.folderRenamed", "Folder renamed.");
@@ -130,6 +138,11 @@ void I18n::load(const QString &languageCode)
     strings_.insert("dialog.longTextNote", "");
     strings_.insert("status.downloadingVoiceModel", "Downloading selected voice model…");
     strings_.insert("voice.nativeDefault", "System / native voice");
+    strings_.insert("voice.googleCzech", "Online Google voice — Czech");
+    strings_.insert("voice.googleEnglish", "Online Google voice — English");
+    strings_.insert("voice.espeakCzech", "eSpeak NG — Czech");
+    strings_.insert("voice.edgeCzech", "Microsoft Edge online — Czech");
+    strings_.insert("voice.edgeEnglish", "Microsoft Edge online — English");
     strings_.insert("voice.piperCzech", "Piper Czech — Jirka");
     strings_.insert("voice.piperEnglish", "Piper English — Amy");
     strings_.insert("dialog.diagnostics", "Diagnostics");
@@ -143,6 +156,7 @@ void I18n::load(const QString &languageCode)
     strings_.insert("dialog.deleteQuestion", "Really delete selected phrase?");
     strings_.insert("dialog.voice", "Voice");
     strings_.insert("dialog.settings", "Settings");
+    strings_.insert("label.paths", "Paths");
     strings_.insert("engine.native", "System / native voice");
     strings_.insert("engine.piper", "Piper neural voice");
     strings_.insert("setting.dark", "Dark mode:");

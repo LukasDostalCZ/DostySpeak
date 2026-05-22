@@ -9,10 +9,20 @@
 #include <QLocale>
 #include <QSaveFile>
 #include <QFile>
+#include <QProcess>
 
 
 static bool systemPrefersDarkTheme()
 {
+#ifdef Q_OS_MAC
+    QProcess process;
+    process.start("defaults", {"read", "-g", "AppleInterfaceStyle"});
+    if (process.waitForFinished(600)) {
+        const QString out = QString::fromUtf8(process.readAllStandardOutput()).trimmed().toLower();
+        if (out.contains("dark")) return true;
+    }
+#endif
+
     if (!qApp) return false;
 
     const QColor window = qApp->palette().color(QPalette::Window);
@@ -66,6 +76,11 @@ AppSettings SettingsStore::load()
     s.piperBinary = o.value("piperBinary").toString(s.piperBinary);
     s.piperModel = o.value("piperModel").toString(s.piperModel);
     s.audioPlayer = o.value("audioPlayer").toString(s.audioPlayer);
+    s.onlineLanguage = o.value("onlineLanguage").toString(s.onlineLanguage);
+    s.edgeTtsCommand = o.value("edgeTtsCommand").toString(s.edgeTtsCommand);
+    s.activeVoicePreset = o.value("activeVoicePreset").toString(s.activeVoicePreset);
+    for (const auto &v : o.value("voicePresetNames").toArray()) s.voicePresetNames << v.toString();
+    for (const auto &v : o.value("voicePresetValues").toArray()) s.voicePresetValues << v.toString();
 
     s.piperLengthScale = o.value("piperLengthScale").toDouble(s.piperLengthScale);
     s.piperNoiseScale = o.value("piperNoiseScale").toDouble(s.piperNoiseScale);
@@ -104,6 +119,15 @@ void SettingsStore::save(const AppSettings &s)
     o["piperBinary"] = s.piperBinary;
     o["piperModel"] = s.piperModel;
     o["audioPlayer"] = s.audioPlayer;
+    o["onlineLanguage"] = s.onlineLanguage;
+    o["edgeTtsCommand"] = s.edgeTtsCommand;
+    o["activeVoicePreset"] = s.activeVoicePreset;
+    QJsonArray voicePresetNames;
+    for (const QString &name : s.voicePresetNames) voicePresetNames.append(name);
+    o["voicePresetNames"] = voicePresetNames;
+    QJsonArray voicePresetValues;
+    for (const QString &value : s.voicePresetValues) voicePresetValues.append(value);
+    o["voicePresetValues"] = voicePresetValues;
 
     o["piperLengthScale"] = s.piperLengthScale;
     o["piperNoiseScale"] = s.piperNoiseScale;

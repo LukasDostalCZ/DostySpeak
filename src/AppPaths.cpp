@@ -106,7 +106,7 @@ QString AppPaths::resourcePath(const QString &relativePath)
 QString AppPaths::defaultPiperBinary()
 {
 #ifdef Q_OS_WIN
-    return dataDir() + "/piper-venv/Scripts/piper.exe";
+    return dataDir() + "/piper-runtime/piper/piper.exe";
 #elif defined(Q_OS_MAC)
     return dataDir() + "/piper-venv/bin/piper";
 #else

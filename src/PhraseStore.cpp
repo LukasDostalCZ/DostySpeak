@@ -9,10 +9,9 @@
 #include <QSaveFile>
 #include <QUuid>
 
-QVector<Phrase> PhraseStore::defaultPhrases()
+QVector<Phrase> PhraseStore::defaultPhrasesForLanguage(const QString &languageCode)
 {
     QVector<Phrase> phrases;
-    const AppSettings settings = SettingsStore::load();
 
     struct TemplatePhrase {
         QString folder;
@@ -21,8 +20,14 @@ QVector<Phrase> PhraseStore::defaultPhrases()
 
     QVector<TemplatePhrase> templates;
 
-    if (settings.language == "cs") {
+    if (languageCode == "cs") {
         templates = {
+            {"Základní", "Ano."},
+            {"Základní", "Ne."},
+            {"Základní", "Nevím."},
+            {"Základní", "Prosím."},
+            {"Základní", "Děkuju."},
+            {"Základní", "Potřebuju pomoc."},
             {"Základní", "Dobrý den, omlouvám se, momentálně nemůžu mluvit. Budu používat hlasový syntetizátor."},
             {"Základní", "Můžete to prosím zopakovat pomaleji?"},
             {"Základní", "Děkuju, rozumím."},
@@ -37,6 +42,12 @@ QVector<Phrase> PhraseStore::defaultPhrases()
         };
     } else {
         templates = {
+            {"General", "Yes."},
+            {"General", "No."},
+            {"General", "I don't know."},
+            {"General", "Please."},
+            {"General", "Thank you."},
+            {"General", "I need help."},
             {"General", "Hello, I am currently unable to speak. I will use this text-to-speech app."},
             {"General", "Could you please repeat that more slowly?"},
             {"General", "Thank you, I understand."},
@@ -62,6 +73,12 @@ QVector<Phrase> PhraseStore::defaultPhrases()
         phrases.push_back(p);
     }
     return phrases;
+}
+
+QVector<Phrase> PhraseStore::defaultPhrases()
+{
+    const AppSettings settings = SettingsStore::load();
+    return defaultPhrasesForLanguage(settings.language);
 }
 
 QVector<Phrase> PhraseStore::load()

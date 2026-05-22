@@ -1,8 +1,8 @@
-# Dosty Speak — Windows installer for MSYS2 UCRT64
+﻿# Dosty Speak - Windows installer for MSYS2 UCRT64
 # Run inside MSYS2 UCRT64 shell:
 #   powershell -ExecutionPolicy Bypass -File scripts/install-windows-msys2.ps1
 
-Write-Host "Dosty Speak — Windows/MSYS2 installer"
+Write-Host "Dosty Speak - Windows/MSYS2 installer"
 Write-Host "====================================="
 
 bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-qt6-base mingw-w64-ucrt-x86_64-python"

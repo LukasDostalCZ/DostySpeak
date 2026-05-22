@@ -22,5 +22,9 @@ private:
 
     QString speakNative(const QString &text);
     QString speakPiper(const QString &text);
+    QString speakGoogleOnline(const QString &text);
+    QString speakEspeakNg(const QString &text);
+    QString speakEdgeOnline(const QString &text);
+    QString playMp3(const QString &path);
     QString playWav(const QString &path);
 };

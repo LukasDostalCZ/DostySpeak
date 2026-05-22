@@ -1,94 +1,142 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Dosty Speak — macOS installer"
-echo "============================="
-
-if ! command -v brew >/dev/null 2>&1; then
-  echo "Homebrew is required: https://brew.sh/"
-  exit 1
-fi
-
-brew install cmake qt || true
-
-QT_PREFIX="$(brew --prefix qt)"
-export PATH="$QT_PREFIX/bin:$PATH"
+cd "$(dirname "$0")/.."
 
 APP_NAME="Dosty Speak"
 TARGET_APP="$HOME/Applications/$APP_NAME.app"
+BUILD_DIR="build-macos"
+DIST_DIR="dist"
 
-rm -rf build-macos
-cmake -S . -B build-macos \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_PREFIX_PATH="$QT_PREFIX"
+if [[ -f VERSION ]]; then
+  DOSTY_SPEAK_VERSION="$(tr -d '[:space:]' < VERSION)"
+else
+  DOSTY_SPEAK_VERSION="0.0.0"
+fi
 
-cmake --build build-macos -j"$(sysctl -n hw.ncpu)"
+echo "Dosty Speak — macOS desktop builder"
+echo "==================================="
+echo "Source version: $DOSTY_SPEAK_VERSION"
+echo
 
-BUILT_APP="$(find build-macos -maxdepth 3 -name 'dosty-speak.app' -type d | head -n 1)"
-if [[ -z "$BUILT_APP" ]]; then
-  echo "Could not find built dosty-speak.app bundle."
-  find build-macos -maxdepth 3 -print
+# Prefer the official Qt macOS kit because Homebrew Qt often produces noisy/incomplete macdeployqt output.
+QT_PREFIX=""
+if [[ -n "${QT_MACOS_PREFIX:-}" && -x "$QT_MACOS_PREFIX/bin/qt-cmake" ]]; then
+  QT_PREFIX="$QT_MACOS_PREFIX"
+elif [[ -n "${QT_HOST_PATH:-}" && -x "$QT_HOST_PATH/bin/qt-cmake" ]]; then
+  QT_PREFIX="$QT_HOST_PATH"
+elif [[ -x "$HOME/Qt/6.11.1/macos/bin/qt-cmake" ]]; then
+  QT_PREFIX="$HOME/Qt/6.11.1/macos"
+elif compgen -G "$HOME/Qt/*/macos/bin/qt-cmake" >/dev/null; then
+  QT_PREFIX="$(ls -d "$HOME"/Qt/*/macos | sort -V | tail -n 1)"
+elif [[ -x "/opt/homebrew/opt/qt/bin/qt-cmake" ]]; then
+  QT_PREFIX="/opt/homebrew/opt/qt"
+elif [[ -x "/usr/local/opt/qt/bin/qt-cmake" ]]; then
+  QT_PREFIX="/usr/local/opt/qt"
+fi
+
+if [[ -z "$QT_PREFIX" ]]; then
+  if command -v brew >/dev/null 2>&1; then
+    brew install cmake qt
+    QT_PREFIX="$(brew --prefix qt)"
+  else
+    echo "Qt was not found."
+    echo "Install Qt 6 for macOS or Homebrew Qt, then run this builder again."
+    exit 1
+  fi
+fi
+
+echo "Using Qt:"
+echo "  $QT_PREFIX"
+echo
+
+QT_CMAKE="$QT_PREFIX/bin/qt-cmake"
+MACDEPLOYQT="$QT_PREFIX/bin/macdeployqt"
+
+mkdir -p "$HOME/Applications" "$DIST_DIR"
+rm -rf "$BUILD_DIR"
+
+"$QT_CMAKE" -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
+cmake --build "$BUILD_DIR" -j"$(sysctl -n hw.ncpu)"
+BUILD_COMPILED_OK=1
+
+BUILT_APP="$BUILD_DIR/dosty-speak.app"
+if [[ ! -d "$BUILT_APP" ]]; then
+  echo "Build finished, but app bundle was not found:"
+  echo "  $BUILT_APP"
   exit 1
 fi
 
-mkdir -p "$HOME/Applications"
+echo
+echo "Installing app to:"
+echo "  $TARGET_APP"
 rm -rf "$TARGET_APP"
 cp -R "$BUILT_APP" "$TARGET_APP"
+chmod +x "$TARGET_APP/Contents/MacOS/dosty-speak" || true
 
-CONTENTS="$TARGET_APP/Contents"
-MACOS="$CONTENTS/MacOS"
-RESOURCES="$CONTENTS/Resources"
+DOSTY_MACDEPLOYQT_TIMEOUT="${DOSTY_MACDEPLOYQT_TIMEOUT:-90}"
 
-# Remove older broken resource placement from previous builds.
-rm -rf "$MACOS/resources"
-
-# macdeployqt should run before final resource copy/signing.
-if command -v macdeployqt >/dev/null 2>&1; then
-  echo "Running macdeployqt..."
-  macdeployqt "$TARGET_APP" -verbose=1 || {
+if [[ -x "$MACDEPLOYQT" ]]; then
+  echo
+  echo "Deploying Qt frameworks into app bundle..."
+  DEPLOY_LOG="$BUILD_DIR/macdeployqt.log"
+  if perl -e 'alarm shift; exec @ARGV' "$DOSTY_MACDEPLOYQT_TIMEOUT" "$MACDEPLOYQT" "$TARGET_APP" -verbose=0 >"$DEPLOY_LOG" 2>&1; then
+    echo "Qt deployment: OK"
+  else
+    echo "Qt deployment reported issues, but the C++ app compile already succeeded."
+    echo "The app may still run on this Mac, but release packaging may not be portable."
+    echo "Full deploy log:"
+    echo "  $DEPLOY_LOG"
     echo
-    echo "macdeployqt reported errors. Continuing because the app may still run on this Mac with Homebrew Qt installed."
-    echo "If the app immediately closes, run it from Terminal with:"
-    echo "  \"$TARGET_APP/Contents/MacOS/dosty-speak\""
-  }
-else
-  echo "macdeployqt not found in PATH."
-  echo "Try: export PATH=\"$QT_PREFIX/bin:\$PATH\""
-fi
-
-# Put app resources inside the correct bundle Resources folder after macdeployqt.
-mkdir -p "$RESOURCES"
-rm -rf "$RESOURCES/resources"
-cp -R resources "$RESOURCES/resources"
-
-if [[ -f "resources/icons/dosty-speak.icns" ]]; then
-  cp "resources/icons/dosty-speak.icns" "$RESOURCES/dosty-speak.icns"
-fi
-
-VERSION="$(grep -E 'VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -n1 | sed -E 's/.*VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
-if [[ -f "$CONTENTS/Info.plist" ]] && command -v /usr/libexec/PlistBuddy >/dev/null 2>&1; then
-  /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $APP_NAME" "$CONTENTS/Info.plist" 2>/dev/null || true
-  /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" "$CONTENTS/Info.plist" 2>/dev/null || true
-  /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier cz.dosty.dostyspeak" "$CONTENTS/Info.plist" 2>/dev/null || true
-  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$CONTENTS/Info.plist" 2>/dev/null || true
-fi
-
-# Remove extended attributes that can make local unsigned apps annoying.
-xattr -cr "$TARGET_APP" 2>/dev/null || true
-
-# Ad-hoc sign after all files are in place. This fixes broken signature states after macdeployqt/resource copy.
-if command -v codesign >/dev/null 2>&1; then
-  echo "Ad-hoc signing app bundle..."
-  codesign --force --deep --sign - "$TARGET_APP" || true
+    tail -n 25 "$DEPLOY_LOG" || true
+  fi
 fi
 
 echo
+echo "Ad-hoc signing app bundle..."
+codesign --force --deep --sign - "$TARGET_APP" >/dev/null 2>&1 || true
+
+echo
+echo "Verifying installed app bundle..."
+if [[ ! -x "$TARGET_APP/Contents/MacOS/dosty-speak" ]]; then
+  echo "Installed app binary is missing or not executable:"
+  echo "  $TARGET_APP/Contents/MacOS/dosty-speak"
+  exit 1
+fi
+
+echo "Installed app version: $DOSTY_SPEAK_VERSION"
 echo "Installed:"
 echo "  $TARGET_APP"
+
+# Always create release artifacts, because user expects desktop build to populate dist.
+ZIP_NAME="DostySpeak-macOS-$DOSTY_SPEAK_VERSION.zip"
+DMG_NAME="DostySpeak-macOS-$DOSTY_SPEAK_VERSION.dmg"
+rm -f "$DIST_DIR/$ZIP_NAME" "$DIST_DIR/$DMG_NAME"
+
+echo
+echo "Creating desktop release ZIP:"
+echo "  $DIST_DIR/$ZIP_NAME"
+ditto -c -k --keepParent "$TARGET_APP" "$DIST_DIR/$ZIP_NAME"
+
+if command -v hdiutil >/dev/null 2>&1; then
+  TMP_DMG_DIR="$(mktemp -d)"
+  cp -R "$TARGET_APP" "$TMP_DMG_DIR/"
+  ln -s /Applications "$TMP_DMG_DIR/Applications" 2>/dev/null || true
+  echo "Creating desktop release DMG:"
+  echo "  $DIST_DIR/$DMG_NAME"
+  hdiutil create \
+    -volname "Dosty Speak $DOSTY_SPEAK_VERSION" \
+    -srcfolder "$TMP_DMG_DIR" \
+    -ov \
+    -format UDZO \
+    "$DIST_DIR/$DMG_NAME" >/dev/null
+  rm -rf "$TMP_DMG_DIR"
+fi
+
+echo
+echo "Desktop release files:"
+find "$DIST_DIR" -maxdepth 1 \( -name "DostySpeak-macOS-$DOSTY_SPEAK_VERSION.zip" -o -name "DostySpeak-macOS-$DOSTY_SPEAK_VERSION.dmg" \) -print | sed 's/^/  /'
+
 echo
 echo "Run it with:"
 echo "  open \"$TARGET_APP\""
-echo
-echo "If it closes immediately, run this and send the output:"
-echo "  \"$TARGET_APP/Contents/MacOS/dosty-speak\""

@@ -89,8 +89,12 @@ function Build-X86 {
         'echo "Current directory:"',
         'pwd',
         'echo "Building pure Win32 x86 legacy frontend..."',
-        'pacman -Syuu --noconfirm || true',
-        'pacman -S --needed --noconfirm mingw-w64-i686-gcc',
+        'if ! command -v g++ >/dev/null 2>&1; then',
+        '  pacman -Syuu --noconfirm || true',
+        '  pacman -S --needed --noconfirm mingw-w64-i686-gcc',
+        'else',
+        '  echo "MINGW32 g++ already available; skipping pacman install."',
+        'fi',
         'rm -rf build-x86-win32',
         'mkdir -p build-x86-win32',
         'g++ -municode -mwindows -Os -s -static -static-libgcc -static-libstdc++ legacy-win32/main.cpp -o build-x86-win32/dosty-speak-legacy-win32.exe -lole32 -luuid -lcomctl32 -lsapi',
@@ -102,7 +106,12 @@ function Build-X86 {
         $ScriptMsys = Convert-ToMsysPath $Script
         & $Bash $ScriptMsys $ProjectMsys
         $code = $LASTEXITCODE
-        if ($code -ne 0) { throw "MSYS2 x86 Win32 build failed with exit code $code" }
+        if ($code -ne 0) {
+            Write-Host ''
+            Write-Host 'x86 build failed. If the log contains PGP signature / unknown trust errors, run:'
+            Write-Host '  powershell -ExecutionPolicy Bypass -File .\scripts\repair-msys2-keyring.ps1'
+            throw "MSYS2 x86 Win32 build failed with exit code $code"
+        }
     }
     finally {
         Remove-Item -Force $Script -ErrorAction SilentlyContinue

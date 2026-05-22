@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="cz.dosty.speak">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:label="Dosty Speak"
+        android:theme="@style/AppTheme"
+        android:extractNativeLibs="true"
+        android:hardwareAccelerated="true">
+
+        <meta-data
+            android:name="android.app.lib_name"
+            android:value="-- %%INSERT_APP_LIB_NAME%% --" />
+
+        <activity
+            android:name="org.qtproject.qt.android.bindings.QtActivity"
+            android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
+            android:screenOrientation="unspecified"
+            android:exported="true">
+
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="-- %%INSERT_APP_LIB_NAME%% --" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

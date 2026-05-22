@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" DOSTY_SPEAK_VERSION LIMIT_COUNT 1)
 project(DostySpeak
-    VERSION 0.2.52
+    VERSION ${DOSTY_SPEAK_VERSION}
     DESCRIPTION "Cross-platform phrase based text-to-speech app"
     LANGUAGES CXX
 )
@@ -109,21 +110,8 @@ install(DIRECTORY resources/icons DESTINATION share/dosty-speak)
 install(FILES resources/icons/256x256/dosty-speak.png DESTINATION share/icons/hicolor/256x256/apps RENAME dosty-speak.png)
 
 
-# Linux package generation via CPack.
-set(CPACK_PACKAGE_NAME "dosty-speak")
-set(CPACK_PACKAGE_VENDOR "Lukas Dostal")
-set(CPACK_PACKAGE_CONTACT "Lukas Dostal <luklin626@gmail.com>")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Cross-platform phrase based text-to-speech app")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/luklin626/dosty-speak")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-set(CPACK_PACKAGE_FILE_NAME "DostySpeak-${PROJECT_VERSION}-${CMAKE_SYSTEM_PROCESSOR}")
 
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Lukas Dostal <luklin626@gmail.com>")
-set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6widgets6 | libqt5widgets5, libqt6network6 | libqt5network5, espeak-ng, alsa-utils")
-set(CPACK_RPM_PACKAGE_LICENSE "MIT")
-set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
-set(CPACK_RPM_PACKAGE_REQUIRES "espeak-ng")
-
-include(CPack)
+# Linux DEB/RPM packaging.
+if(UNIX AND NOT APPLE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/DostyPackaging.cmake")
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/DostyPackaging.cmake")
+endif()
