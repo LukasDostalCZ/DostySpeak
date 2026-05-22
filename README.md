@@ -3,7 +3,7 @@
 # Dosty Speak
 
 **Current version: 0.3.61**  
-**Downloads:** [latest GitHub release](/releases/latest)
+**Downloads:** [latest GitHub release](https://github.com/LukasDostalCZ/DostySpeak/releases/latest)
 
 **Dosty Speak** is a small cross-platform text-to-speech app for quickly speaking typed and saved phrases.
 
