@@ -791,3 +791,9 @@
 - Mobile preview: added persistent saved phrases.
 - Mobile preview: added editable quick phrases in the Presets tab.
 - Mobile preview: quick phrase buttons still speak immediately from the main screen.
+
+## 0.3.61
+
+- Synced Linux terminal builder UX with the macOS builder.
+- Added Linux DEB/RPM package options directly to the Linux TUI.
+- Kept versioning centralized in VERSION.

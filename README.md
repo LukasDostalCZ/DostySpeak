@@ -2,13 +2,26 @@
 
 # Dosty Speak
 
+**Current version: 0.3.61**  
+**Downloads:** [latest GitHub release](/releases/latest)
+
 **Dosty Speak** is a small cross-platform text-to-speech app for quickly speaking typed and saved phrases.
 
-It is built in **C++17 + Qt Widgets**.
+It is built in **C++17 + Qt**.
 
 Author: **Lukáš Dostál**  
-License: **MIT**  
-Current version: **0.3.39**
+License: **MIT**
+
+## Available packages
+
+The release page contains builds for the main supported platforms:
+
+| Platform | Package | Notes |
+|---|---|---|
+| Windows | 64-bit installer, 64-bit portable ZIP, 32-bit basic legacy build | The 64-bit build is the main Windows version. The 32-bit build is intentionally very basic. |
+| Linux | DEB, RPM | Packages are created from the Linux terminal builder. |
+| macOS | DMG | Standard macOS release package. |
+| Android | APK | Experimental mobile build. |
 
 ---
 
@@ -27,10 +40,13 @@ Current version: **0.3.39**
 
 | Platform | Status |
 |---|---|
-| macOS | Main modern Qt app |
 | Windows 64-bit | Main modern Qt app, installer EXE and portable ZIP |
-| Windows 32-bit | Very limited legacy Win32 build, no Piper/Python, basic phrase speaking only |
-| Linux | Main modern Qt app, portable tar.gz, DEB and RPM |
+| Windows 32-bit | Very limited legacy Win32 build, basic phrase speaking only |
+| Linux | DEB and RPM packages |
+| macOS | DMG package |
+| Android | Experimental APK |
+
+Download ready-made release files from [GitHub Releases](../../releases/latest).
 
 ---
 
@@ -180,8 +196,8 @@ Typical files:
 
 ```text
 DostySpeak-Linux-x86_64.tar.gz
-DostySpeak-0.2.xx-x86_64.deb
-DostySpeak-0.2.xx-x86_64.rpm
+DostySpeak-0.3.61-x86_64.deb
+DostySpeak-0.3.61-x86_64.rpm
 ```
 
 ### Linux 32-bit note
@@ -198,11 +214,10 @@ Recommended first release assets:
 DostySpeak-Setup-x64.exe
 DostySpeak-Portable-x64.zip
 DostySpeak-Legacy-Win32-Portable-x86.zip
-DostySpeak-macOS-*.tar.gz
 DostySpeak-*.dmg
-DostySpeak-Linux-x86_64.tar.gz
-*.deb
-*.rpm
+DostySpeak-Linux-*.deb
+DostySpeak-Linux-*.rpm
+DostySpeak-Mobile-*-android.apk
 ```
 
 ---

@@ -1,193 +1,287 @@
 #!/usr/bin/env bash
-set -u
+set -uo pipefail
 
-APP_NAME="Dosty Speak"
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT_DIR"
+cd "$(dirname "$0")/.."
 
-APP_VERSION="0.0.0"
-[[ -f VERSION ]] && APP_VERSION="$(tr -d '[:space:]' < VERSION)"
-
-LOG_DIR="$ROOT_DIR/logs"
-DIST_DIR="$ROOT_DIR/dist/linux"
-mkdir -p "$LOG_DIR" "$DIST_DIR"
-LOG_FILE="$LOG_DIR/dosty-speak-${APP_VERSION}-linux-build-$(date +%Y%m%d-%H%M%S).log"
-LATEST_LOG="$LOG_DIR/latest-linux-build.log"
-
-if command -v tput >/dev/null 2>&1 && [[ -t 1 ]]; then
-  c_reset="$(tput sgr0 || true)"
-  c_bold="$(tput bold || true)"
-  c_dim="$(tput dim || true)"
-  c_cyan="$(tput setaf 6 || true)"
-  c_green="$(tput setaf 2 || true)"
-  c_yellow="$(tput setaf 3 || true)"
-  c_red="$(tput setaf 1 || true)"
+if [[ -f scripts/version.sh ]]; then
+  # shellcheck source=/dev/null
+  source scripts/version.sh
 else
-  c_reset=""; c_bold=""; c_dim=""; c_cyan=""; c_green=""; c_yellow=""; c_red=""
+  DOSTY_SPEAK_VERSION="$(tr -d '[:space:]' < VERSION 2>/dev/null || echo 0.0.0)"
 fi
 
-items=(
-  "Install/check Linux dependencies"
-  "Build Linux desktop app"
-  "Create DEB package"
-  "Create RPM package"
-  "Create both DEB and RPM"
-  "Build Linux mobile preview"
-  "Clean Linux build/dist"
-)
-selected=(1 2 5)
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+BUILD_ID="$(date +%Y%m%d-%H%M%S)"
+LOG_FILE="$LOG_DIR/dosty-speak-$DOSTY_SPEAK_VERSION-linux-build-$BUILD_ID.log"
+LATEST_LOG="$LOG_DIR/latest-linux-build.log"
+SELECTION_FILE="$(mktemp -t dosty-linux-build-selection.XXXXXX.json)"
 
-contains() {
-  local needle="$1"; shift
-  local item
-  for item in "$@"; do [[ "$item" == "$needle" ]] && return 0; done
-  return 1
+: > "$LOG_FILE"
+ln -sf "$(basename "$LOG_FILE")" "$LATEST_LOG" 2>/dev/null || cp "$LOG_FILE" "$LATEST_LOG"
+
+selected_keys() {
+  grep -o '"[^"]*"' "$SELECTION_FILE" | sed 's/"//g' | grep -v '^selected$' || true
 }
 
-toggle_item() {
-  local n="$1" item found=0 out=()
-  for item in "${selected[@]}"; do
-    if [[ "$item" == "$n" ]]; then
-      found=1
-    else
-      out+=("$item")
-    fi
+shell_quote_for_log() {
+  local out="" arg
+  for arg in "$@"; do
+    arg="${arg//\'/\'\\\\\'\'}"
+    out="${out} '${arg}'"
   done
-  [[ "$found" == "0" ]] && out+=("$n")
-  selected=("${out[@]}")
+  printf "%s" "${out# }"
 }
 
-header() {
-  clear 2>/dev/null || true
-  printf '%b%s%b\n' "$c_cyan$c_bold" "$APP_NAME - Linux terminal builder" "$c_reset"
-  printf '%b%s%b\n' "$c_dim" "================================================" "$c_reset"
-  printf 'Version: %s\n' "$APP_VERSION"
-  printf 'Log:     %s\n\n' "$LOG_FILE"
+run_menu_ui() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 scripts/build_terminal_linux_ui.py "$SELECTION_FILE" "$DOSTY_SPEAK_VERSION" "$LOG_FILE"
+  else
+    clear
+    echo "Python 3 is required for the graphical terminal builder."
+    echo "Install it using your package manager, for example:"
+    echo "  sudo apt install python3"
+    echo
+    echo '{"selected":["deps","linux_desktop","both_packages"]}' > "$SELECTION_FILE"
+    read -r -p "Press Enter to continue with default Linux package build, or Ctrl+C to stop."
+  fi
 }
 
-draw_menu() {
-  header
-  printf '%bControls:%b type numbers separated by spaces, Enter builds selected, a toggles all, q quits\n\n' "$c_dim" "$c_reset"
-  local i n mark
-  for i in "${!items[@]}"; do
-    n=$((i + 1))
-    mark=" "
-    contains "$n" "${selected[@]}" && mark="x"
-    printf '  %d) [%s] %s\n' "$n" "$mark" "${items[$i]}"
-  done
-  printf '\nRecommended full Linux build: 1 2 5\n'
-}
+run_logged_interactive() {
+  local title="$1"
+  local step_index="$2"
+  local total_steps="$3"
+  shift 3
 
-read_menu_choice() {
-  local line part
-  printf '\nSelection: '
-  IFS= read -r line || exit 0
-  [[ -z "$line" ]] && return 0
-  case "$line" in
-    q|Q) exit 0 ;;
-    a|A)
-      if [[ ${#selected[@]} -eq ${#items[@]} ]]; then
-        selected=()
-      else
-        selected=(1 2 3 4 5 6 7)
-      fi
-      return 1
-      ;;
-  esac
-  for part in $line; do
-    [[ "$part" =~ ^[1-7]$ ]] && toggle_item "$part"
-  done
-  return 1
-}
+  {
+    echo
+    echo "============================================================"
+    echo "$title"
+    echo "Started: $(date)"
+    echo "Command: $(shell_quote_for_log "$@")"
+    echo "============================================================"
+  } >> "$LOG_FILE"
 
-confirm() {
-  header
-  printf 'Summary:\n'
-  local i n mark
-  for i in "${!items[@]}"; do
-    n=$((i + 1))
-    mark=" "
-    contains "$n" "${selected[@]}" && mark="x"
-    printf '  [%s] %s\n' "$mark" "${items[$i]}"
-  done
-  printf '\nContinue? [y/N]: '
-  local ans
-  IFS= read -r ans || exit 1
-  [[ "$ans" =~ ^[Yy]$ ]]
-}
+  clear
+  echo "Dosty Speak — interactive step"
+  echo "=============================="
+  echo
+  echo "Version: $DOSTY_SPEAK_VERSION"
+  echo "Step $((step_index + 1))/$total_steps: $title"
+  echo
+  echo "This step may ask for password or confirmations."
+  echo "Type directly in this terminal."
+  echo
+  echo "Output is being written to:"
+  echo "  $LOG_FILE"
+  echo
 
-run_step() {
-  local title="$1"; shift
-  local code started finished ans
-
-  printf '\n%b============================================================%b\n' "$c_dim" "$c_reset" | tee -a "$LOG_FILE"
-  printf '%s\n' "$title" | tee -a "$LOG_FILE"
-  started="$(date)"
-  printf 'Started: %s\n' "$started" | tee -a "$LOG_FILE"
-  printf 'Command:' | tee -a "$LOG_FILE"
-  printf ' %q' "$@" | tee -a "$LOG_FILE"
-  printf '\n%b============================================================%b\n' "$c_dim" "$c_reset" | tee -a "$LOG_FILE"
-
-  set +e
   "$@" 2>&1 | tee -a "$LOG_FILE"
-  code=${PIPESTATUS[0]}
-  set -u
+  local code=${PIPESTATUS[0]}
 
-  finished="$(date)"
-  printf '\nFinished: %s\nExit code: %s\n' "$finished" "$code" | tee -a "$LOG_FILE"
-  ln -sf "$(basename "$LOG_FILE")" "$LATEST_LOG" 2>/dev/null || cp "$LOG_FILE" "$LATEST_LOG" 2>/dev/null || true
+  {
+    echo
+    echo "Finished: $(date)"
+    echo "Exit code: $code"
+  } >> "$LOG_FILE"
 
-  if [[ "$code" != "0" ]]; then
-    printf '\n%bStep failed.%b\nLog saved here:\n  %s\n' "$c_red" "$c_reset" "$LOG_FILE"
-    printf 'Press Enter to continue, r to retry, or q to stop: '
-    IFS= read -r ans || true
-    case "$ans" in
+  if [[ "$code" -ne 0 ]]; then
+    echo
+    echo "Step failed or paused for manual action."
+    echo
+    echo "Last 80 log lines:"
+    echo "------------------------------------------------------------"
+    tail -n 80 "$LOG_FILE" 2>/dev/null || true
+    echo "------------------------------------------------------------"
+    echo
+    echo "Log saved to:"
+    echo "  $LOG_FILE"
+    echo
+    read -r -p "Press Enter to continue, r to retry, or q to stop: " answer
+    case "$answer" in
+      r|R) run_logged_interactive "$title" "$step_index" "$total_steps" "$@" ;;
       q|Q) exit "$code" ;;
-      r|R) run_step "$title" "$@" ;;
+      *) return "$code" ;;
     esac
   fi
+  return 0
 }
 
-install_deps() {
-  if command -v apt >/dev/null 2>&1; then
-    sudo apt update
-    sudo apt install -y build-essential cmake ninja-build qt6-base-dev qt6-base-dev-tools qt6-declarative-dev espeak-ng alsa-utils rpm
-  elif command -v dnf >/dev/null 2>&1; then
-    sudo dnf install -y gcc-c++ cmake ninja-build qt6-qtbase-devel qt6-qtdeclarative-devel espeak-ng alsa-utils rpm-build
-  elif command -v zypper >/dev/null 2>&1; then
-    sudo zypper install -y gcc-c++ cmake ninja qt6-base-devel qt6-declarative-devel espeak-ng alsa-utils rpm-build
-  elif command -v pacman >/dev/null 2>&1; then
-    sudo pacman -S --needed base-devel cmake ninja qt6-base qt6-declarative espeak-ng alsa-utils rpm-tools
+run_logged_viewer() {
+  local title="$1"
+  local step_index="$2"
+  local total_steps="$3"
+  shift 3
+
+  local done_file status_file
+  done_file="$(mktemp -t dosty-linux-build-step-done.XXXXXX)"
+  status_file="$(mktemp -t dosty-linux-build-step-status.XXXXXX)"
+  rm -f "$done_file"
+  echo "running" > "$status_file"
+
+  {
+    echo
+    echo "============================================================"
+    echo "$title"
+    echo "Started: $(date)"
+    echo "Command: $(shell_quote_for_log "$@")"
+    echo "============================================================"
+  } >> "$LOG_FILE"
+
+  ("$@" >> "$LOG_FILE" 2>&1) &
+  local pid=$!
+
+  if command -v python3 >/dev/null 2>&1 && [[ -f scripts/build_log_viewer.py ]]; then
+    python3 scripts/build_log_viewer.py "$LOG_FILE" "$DOSTY_SPEAK_VERSION" "$title" "$step_index" "$total_steps" "$pid" "$done_file" "$status_file" &
+    local viewer_pid=$!
   else
-    printf 'Unsupported package manager. Install CMake, Qt, compiler and rpm tools manually.\n' >&2
-    return 1
+    local viewer_pid=""
+    echo "Building $title..."
   fi
+
+  wait "$pid"
+  local code=$?
+
+  if [[ "$code" -eq 0 ]]; then
+    echo "finished" > "$status_file"
+  else
+    echo "failed" > "$status_file"
+  fi
+
+  {
+    echo
+    echo "Finished: $(date)"
+    echo "Exit code: $code"
+  } >> "$LOG_FILE"
+
+  touch "$done_file"
+
+  if [[ -n "$viewer_pid" ]]; then
+    wait "$viewer_pid" 2>/dev/null || true
+  fi
+
+  if [[ "$code" -ne 0 ]]; then
+    clear
+    echo "Step failed."
+    echo
+    echo "Last 80 log lines:"
+    echo "------------------------------------------------------------"
+    tail -n 80 "$LOG_FILE" 2>/dev/null || true
+    echo "------------------------------------------------------------"
+    echo
+    echo "Log saved to:"
+    echo "  $LOG_FILE"
+    echo
+    read -r -p "Press Enter to continue, r to retry, or q to stop: " answer
+    case "$answer" in
+      r|R) run_logged_viewer "$title" "$step_index" "$total_steps" "$@" ;;
+      q|Q) exit "$code" ;;
+      *) return "$code" ;;
+    esac
+  fi
+  return 0
 }
 
-while true; do
-  draw_menu
-  read_menu_choice || continue
-  break
+run_menu_ui
+
+if [[ ! -s "$SELECTION_FILE" ]] || ! grep -q '"selected"' "$SELECTION_FILE"; then
+  clear
+  echo "No build selected."
+  exit 0
+fi
+
+SELECTED=()
+FAILED_KEYS=()
+while IFS= read -r line; do
+  SELECTED+=("$line")
+done < <(selected_keys)
+
+TOTAL_STEPS="${#SELECTED[@]}"
+if [[ "$TOTAL_STEPS" -eq 0 ]]; then
+  clear
+  echo "No build selected."
+  exit 0
+fi
+
+clear
+echo "Build summary"
+echo "============="
+echo
+echo "Linux TUI uses the same log viewer style as the macOS builder."
+echo "DEB/RPM packaging is available from this menu."
+echo
+echo "Version: $DOSTY_SPEAK_VERSION"
+echo "Log:     $LOG_FILE"
+echo
+echo "Selected:"
+for key in "${SELECTED[@]}"; do
+  echo "  - $key"
 done
+echo
+read -r -p "Start build? [y/N]: " answer
+[[ "$answer" =~ ^[Yy]$ ]] || exit 0
 
-confirm || exit 0
-: > "$LOG_FILE"
-chmod +x scripts/build-linux-packages.sh 2>/dev/null || true
-
-for n in "${selected[@]}"; do
-  case "$n" in
-    1) run_step "Install/check Linux dependencies" bash -lc "$(declare -f install_deps); install_deps" ;;
-    2) run_step "Build Linux desktop app" bash -lc './scripts/build-linux-packages.sh app' ;;
-    3) run_step "Create DEB package" bash -lc './scripts/build-linux-packages.sh deb' ;;
-    4) run_step "Create RPM package" bash -lc './scripts/build-linux-packages.sh rpm' ;;
-    5) run_step "Create both DEB and RPM" bash -lc './scripts/build-linux-packages.sh both' ;;
-    6) run_step "Build Linux mobile preview" bash -lc 'rm -rf build-mobile-preview-linux && cmake -S mobile -B build-mobile-preview-linux -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-mobile-preview-linux --parallel' ;;
-    7) run_step "Clean Linux build/dist" bash -lc './scripts/build-linux-packages.sh clean' ;;
+step_index=0
+for key in "${SELECTED[@]}"; do
+  case "$key" in
+    deps)
+      run_logged_interactive "Install/check Linux dependencies" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/install-linux-build-deps.sh && ./scripts/install-linux-build-deps.sh'
+      ;;
+    linux_desktop)
+      if ! run_logged_viewer "Build Linux desktop app" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh app'; then
+        FAILED_KEYS+=("linux_desktop")
+      fi
+      ;;
+    linux_install)
+      if ! run_logged_interactive "Install Linux desktop app to this user" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/install-linux.sh && ./scripts/install-linux.sh'; then
+        FAILED_KEYS+=("linux_install")
+      fi
+      ;;
+    deb)
+      if ! run_logged_viewer "Create DEB package" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh deb'; then
+        FAILED_KEYS+=("deb")
+      fi
+      ;;
+    rpm)
+      if ! run_logged_viewer "Create RPM package" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh rpm'; then
+        FAILED_KEYS+=("rpm")
+      fi
+      ;;
+    both_packages)
+      if ! run_logged_viewer "Create both DEB and RPM packages" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh both'; then
+        FAILED_KEYS+=("both_packages")
+      fi
+      ;;
+    mobile_preview)
+      if [[ -x scripts/build-mobile-preview-linux.sh ]]; then
+        run_logged_viewer "Build Linux mobile preview" "$step_index" "$TOTAL_STEPS" bash -lc './scripts/build-mobile-preview-linux.sh' || true
+      else
+        run_logged_interactive "Build Linux mobile preview" "$step_index" "$TOTAL_STEPS" bash -lc 'echo "Linux mobile preview script is not present in this repository yet."; echo "Desktop and DEB/RPM packaging can still be built."; exit 0'
+      fi
+      ;;
+    clean)
+      run_logged_interactive "Clean Linux build/dist" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh clean'
+      ;;
   esac
+  step_index=$((step_index + 1))
 done
 
-header
-printf '%bDone.%b\n\n' "$c_green" "$c_reset"
-printf 'Log saved here:\n  %s\n\n' "$LOG_FILE"
-printf 'Linux artifacts:\n'
-find "$DIST_DIR" -maxdepth 1 -type f 2>/dev/null | sort || true
+clear
+echo "Done."
+echo
+echo "Version:"
+echo "  $DOSTY_SPEAK_VERSION"
+echo
+echo "Full log:"
+echo "  $LOG_FILE"
+echo
+echo "Latest log shortcut:"
+echo "  $LATEST_LOG"
+echo
+echo "Artifacts:"
+echo "  dist/linux/"
+echo
+echo "Commit check:"
+echo "  git status"
+echo "  git diff --stat"
+echo

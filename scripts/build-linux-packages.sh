@@ -7,8 +7,14 @@ cd "$ROOT_DIR"
 MODE="${1:-both}"
 BUILD_DIR="${BUILD_DIR:-build-linux}"
 DIST_DIR="${DIST_DIR:-dist/linux}"
-VERSION="0.0.0"
-[[ -f VERSION ]] && VERSION="$(tr -d '[:space:]' < VERSION)"
+
+if [[ -f scripts/version.sh ]]; then
+  # shellcheck source=/dev/null
+  source scripts/version.sh
+  VERSION="$DOSTY_SPEAK_VERSION"
+else
+  VERSION="$(tr -d '[:space:]' < VERSION 2>/dev/null || echo 0.0.0)"
+fi
 
 mkdir -p "$DIST_DIR"
 
@@ -75,14 +81,12 @@ build_app() {
 copy_packages() {
   local extension="$1"
   shopt -s nullglob
-  local files=("$BUILD_DIR"/*."$extension")
-  if (( ${#files[@]} == 0 )); then
-    files=(./*."$extension")
-  fi
+  local files=("$BUILD_DIR"/*."$extension" ./*."$extension")
   if (( ${#files[@]} == 0 )); then
     fail "No .$extension package was created."
   fi
   for file in "${files[@]}"; do
+    [[ -f "$file" ]] || continue
     cp -f "$file" "$DIST_DIR/"
     printf 'Created: %s\n' "$DIST_DIR/$(basename "$file")"
   done
@@ -96,7 +100,7 @@ package_deb() {
 }
 
 package_rpm() {
-  need rpmbuild || true
+  need rpmbuild
   build_app
   say "Creating RPM package"
   (cd "$BUILD_DIR" && cpack -G RPM)
@@ -139,8 +143,3 @@ EOT
     exit 2
     ;;
 esac
-
-say "Done"
-printf 'Version: %s\n' "$VERSION"
-printf 'Artifacts directory: %s\n' "$DIST_DIR"
-find "$DIST_DIR" -maxdepth 1 -type f 2>/dev/null | sort || true

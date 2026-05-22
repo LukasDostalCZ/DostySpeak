@@ -1,26 +1,25 @@
 # Dosty Speak TUI run instructions
 
-These commands start the terminal builder menu for each platform.
-Run them from the root of the Dosty Speak repository.
+All normal builds should be started through the platform terminal builder.
 
 ## macOS
 
 ```bash
 cd ~/Dev/dosty-speak
-chmod +x scripts/build-terminal-macos.sh
+chmod +x scripts/*.sh
 ./scripts/build-terminal-macos.sh
 ```
 
-## Windows 10 / 11 PowerShell
+## Windows 10 LTSC 2019 / Windows 11
 
-If the project is on Desktop:
+Open Windows PowerShell in the project directory and run:
 
 ```powershell
 cd $env:USERPROFILE\Desktop\dosty-speak
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
 ```
 
-If the project is in Dev:
+If the project is in `Dev` instead of Desktop:
 
 ```powershell
 cd $env:USERPROFILE\Dev\dosty-speak
@@ -31,28 +30,35 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-terminal-win
 
 ```bash
 cd ~/Dev/dosty-speak
-chmod +x scripts/build-terminal-linux.sh scripts/build-linux-packages.sh scripts/apply-linux-packaging-fix.sh
+chmod +x scripts/*.sh
 ./scripts/build-terminal-linux.sh
 ```
 
-Direct Linux package build without the menu:
+The Linux TUI can build the desktop app and create packages.
+
+Direct package build without the menu:
 
 ```bash
 ./scripts/build-linux-packages.sh both
 ```
 
-Outputs are created in:
+Outputs:
 
 ```text
 dist/linux/
 ```
 
-## Commit and push
+## Git check before push
 
 ```bash
 git status
-git diff
-git add CMakeLists.txt VERSION cmake/DostyPackaging.cmake scripts/build-terminal-linux.sh scripts/build-linux-packages.sh scripts/apply-linux-packaging-fix.sh docs/TUI-RUN-INSTRUCTIONS.md README-COMMIT.md
-git commit -m "Add Linux DEB and RPM packaging"
+git diff --stat
+```
+
+Then commit:
+
+```bash
+git add .
+git commit -m "Sync Linux terminal builder with macOS and add DEB/RPM packaging"
 git push
 ```
