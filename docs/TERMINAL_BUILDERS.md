@@ -23,11 +23,13 @@ powershell -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
 ## Controls
 
 ```text
-Up/Down  move selection
-Space    toggle selected item
-Enter    start build
-a        toggle all
-q        quit
+Up/Down or j/k  move selection
+Space           toggle selected item
+Enter           start build
+a               toggle all
+n               clear all
+l               open logs folder, where supported
+q               quit
 ```
 
 ## Logs
@@ -48,7 +50,24 @@ logs/latest-linux-build.log
 logs/latest-windows-build.log
 ```
 
-During non-interactive build steps, the builder shows a progress bar and a live tail of the log.
+During build steps, the builder shows live output and writes the same text to the timestamped log and latest-log shortcut.
+
+
+## Windows controls
+
+```text
+Up/Down  move selection
+j/k      move selection
+Space    toggle highlighted item
+1-4      choose preset
+Enter    start build
+a        toggle all
+n        clear all
+l        open logs folder
+q        quit
+```
+
+The Windows builder is implemented in PowerShell so it works on Windows PowerShell 5.1 and Windows 10 LTSC 2019 without installing Python/curses.
 
 
 ## macOS controls

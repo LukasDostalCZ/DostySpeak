@@ -29,7 +29,7 @@
 !define APP_NAME "Dosty Speak"
 !define APP_EXE "dosty-speak.exe"
 !ifndef APP_VERSION
-  !define APP_VERSION "0.3.50"
+  !define APP_VERSION "0.3.62"
 !endif
 !define APP_PUBLISHER "Lukáš Dostál"
 !define APP_REGKEY "Software\Dosty Speak"
@@ -43,7 +43,7 @@ RequestExecutionLevel admin
 Unicode true
 
 !ifndef APP_VERSION_NUMERIC
-  !define APP_VERSION_NUMERIC "0.3.50.0"
+  !define APP_VERSION_NUMERIC "0.3.62.0"
 !endif
 VIProductVersion "${APP_VERSION_NUMERIC}"
 VIAddVersionKey "ProductName" "${APP_NAME}"

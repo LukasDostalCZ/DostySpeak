@@ -261,6 +261,96 @@ function Find-QtHostKit([string]$AndroidKit) {
     return $null
 }
 
+function Add-ToolDirectoryToPath([string]$ToolPath) {
+    if (!$ToolPath -or !(Test-Path $ToolPath)) { return }
+    $dir = Split-Path $ToolPath -Parent
+    if (!$dir -or !(Test-Path $dir)) { return }
+    $parts = @($env:Path -split ";" | Where-Object { $_ })
+    foreach ($p in $parts) {
+        if ($p.TrimEnd("\") -ieq $dir.TrimEnd("\")) { return }
+    }
+    $env:Path = $dir + ";" + $env:Path
+}
+
+function Test-ToolPath([string]$Path, [string]$FileName) {
+    if (!$Path) { return $null }
+    if (Test-Path $Path -PathType Container) { $Path = Join-Path $Path $FileName }
+    if (Test-Path $Path -PathType Leaf) {
+        try { return (Resolve-Path $Path).Path } catch { return $Path }
+    }
+    return $null
+}
+
+function Find-ToolInCandidates([string]$FileName, [string[]]$Candidates) {
+    $cmd = Find-CommandPath $FileName
+    if ($cmd) { return $cmd }
+    foreach ($candidate in $Candidates | Select-Object -Unique) {
+        $tool = Test-ToolPath $candidate $FileName
+        if ($tool) { return $tool }
+    }
+    return $null
+}
+
+function Find-CmakePath([string]$QtHost) {
+    $candidates = @()
+    if ($env:CMAKE_EXE) { $candidates += $env:CMAKE_EXE }
+    if ($env:CMAKE_ROOT) { $candidates += Join-Path $env:CMAKE_ROOT "bin\cmake.exe" }
+    if ($QtHost) {
+        $qtVersionDir = Split-Path $QtHost -Parent
+        $qtRoot = Split-Path $qtVersionDir -Parent
+        $candidates += Join-Path $qtRoot "Tools\CMake_64\bin\cmake.exe"
+        $candidates += Join-Path $qtRoot "Tools\CMake\bin\cmake.exe"
+    }
+    foreach ($qtRoot in Get-QtSearchRoots) {
+        $candidates += Join-Path $qtRoot "Tools\CMake_64\bin\cmake.exe"
+        $candidates += Join-Path $qtRoot "Tools\CMake\bin\cmake.exe"
+        $toolsRoot = Join-Path $qtRoot "Tools"
+        if (Test-Path $toolsRoot) {
+            $candidates += (Get-ChildItem $toolsRoot -Recurse -Filter "cmake.exe" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        }
+    }
+    $candidates += "C:\Program Files\CMake\bin\cmake.exe"
+    $candidates += "C:\Program Files (x86)\CMake\bin\cmake.exe"
+    $candidates += "C:\msys64\ucrt64\bin\cmake.exe"
+    $candidates += "C:\msys64\mingw64\bin\cmake.exe"
+    $candidates += "C:\msys64\usr\bin\cmake.exe"
+    $vsRoot = "C:\Program Files\Microsoft Visual Studio"
+    if (Test-Path $vsRoot) {
+        $candidates += (Get-ChildItem $vsRoot -Recurse -Filter "cmake.exe" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+    }
+    return Find-ToolInCandidates "cmake.exe" $candidates
+}
+
+function Find-NinjaPath([string]$QtHost) {
+    $candidates = @()
+    if ($env:NINJA_EXE) { $candidates += $env:NINJA_EXE }
+    if ($QtHost) {
+        $qtVersionDir = Split-Path $QtHost -Parent
+        $qtRoot = Split-Path $qtVersionDir -Parent
+        $candidates += Join-Path $qtRoot "Tools\Ninja\ninja.exe"
+        $candidates += Join-Path $qtRoot "Tools\mingw1310_64\bin\ninja.exe"
+        $candidates += Join-Path $qtRoot "Tools\mingw1120_64\bin\ninja.exe"
+        $candidates += Join-Path $qtRoot "Tools\mingw900_64\bin\ninja.exe"
+    }
+    foreach ($qtRoot in Get-QtSearchRoots) {
+        $candidates += Join-Path $qtRoot "Tools\Ninja\ninja.exe"
+        $toolsRoot = Join-Path $qtRoot "Tools"
+        if (Test-Path $toolsRoot) {
+            $candidates += (Get-ChildItem $toolsRoot -Recurse -Filter "ninja.exe" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        }
+    }
+    $candidates += "C:\Program Files\CMake\bin\ninja.exe"
+    $candidates += "C:\Program Files (x86)\CMake\bin\ninja.exe"
+    $candidates += "C:\msys64\ucrt64\bin\ninja.exe"
+    $candidates += "C:\msys64\mingw64\bin\ninja.exe"
+    $candidates += "C:\msys64\usr\bin\ninja.exe"
+    $vsRoot = "C:\Program Files\Microsoft Visual Studio"
+    if (Test-Path $vsRoot) {
+        $candidates += (Get-ChildItem $vsRoot -Recurse -Filter "ninja.exe" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+    }
+    return Find-ToolInCandidates "ninja.exe" $candidates
+}
+
 function Find-BuildToolsBin([string]$Sdk) {
     $preferred = Join-Path $Sdk ("build-tools\" + $BuildToolsVersion)
     if (Test-Path (Join-Path $preferred "apksigner.bat")) { return $preferred }
@@ -269,6 +359,17 @@ function Find-BuildToolsBin([string]$Sdk) {
     $dirs = Get-ChildItem $root -Directory | Sort-Object Name -Descending
     foreach ($d in $dirs) { if (Test-Path (Join-Path $d.FullName "apksigner.bat")) { return $d.FullName } }
     return $null
+}
+
+function Stop-GradleDaemons([string]$BuildRoot) {
+    $gradlew = Join-Path $BuildRoot "android-build\gradlew.bat"
+    if (Test-Path $gradlew) {
+        try {
+            & $gradlew --stop | Out-Null
+        } catch {
+            Warn "Could not stop Gradle daemon cleanly."
+        }
+    }
 }
 
 function Test-PythonCommand([string]$Exe, [string[]]$PrefixArgs) {
@@ -484,6 +585,12 @@ Ensure-AndroidPackages $Sdk
 Ensure-QtKitHints
 
 if ($SetupOnly) {
+    $setupQtAndroid = Find-QtAndroidKit
+    $setupQtHost = Find-QtHostKit $setupQtAndroid
+    $setupCmake = Find-CmakePath $setupQtHost
+    $setupNinja = Find-NinjaPath $setupQtHost
+    if ($setupCmake) { Ok "CMake found: $setupCmake" } else { Warn "CMake not found. Install Qt Tools -> CMake or put cmake.exe in PATH." }
+    if ($setupNinja) { Ok "Ninja found: $setupNinja" } else { Warn "Ninja not found. Install Qt Tools -> Ninja or put ninja.exe in PATH." }
     Write-Host ""
     Ok "Android dependency check finished."
     Write-Host "If Qt Android kit is missing, install it with Qt Online Installer:"
@@ -500,10 +607,12 @@ $QtKits = Ensure-QtAndroidKitsInteractive
 $QtAndroid = $QtKits.Android
 $QtHost = $QtKits.Host
 
-$Cmake = Find-CommandPath "cmake.exe"
-$Ninja = Find-CommandPath "ninja.exe"
-if (!$Cmake) { Fail "cmake.exe not found. Install CMake and put it in PATH." }
-if (!$Ninja) { Fail "ninja.exe not found. Install Ninja and put it in PATH." }
+$Cmake = Find-CmakePath $QtHost
+$Ninja = Find-NinjaPath $QtHost
+if (!$Cmake) { Fail "cmake.exe not found. Install CMake, or install Qt Tools -> CMake with Qt Maintenance Tool." }
+if (!$Ninja) { Fail "ninja.exe not found. Install Ninja, or install Qt Tools -> Ninja with Qt Maintenance Tool." }
+Add-ToolDirectoryToPath $Cmake
+Add-ToolDirectoryToPath $Ninja
 
 $env:ANDROID_SDK_ROOT = $Sdk
 $env:ANDROID_HOME = $Sdk
@@ -517,6 +626,8 @@ Write-Host "  Android SDK: $Sdk"
 Write-Host "  Android NDK: $Ndk"
 Write-Host "  Qt Android:  $QtAndroid"
 Write-Host "  Qt Host:     $QtHost"
+Write-Host "  CMake:       $Cmake"
+Write-Host "  Ninja:       $Ninja"
 Write-Host ""
 
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
@@ -569,3 +680,5 @@ if ($Tools -and (Test-Path (Join-Path $Tools "apksigner.bat"))) {
 Write-Host ""
 Ok "Done. Installable APK:"
 Write-Host "  $Signed"
+Stop-GradleDaemons $BuildDir
+exit 0

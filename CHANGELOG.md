@@ -1,5 +1,17 @@
-## 0.3.50
+## 0.3.62
 
+- Windows terminal builder now has a grouped full-screen menu with detail panel, presets, scroll-friendly navigation and clearer live step output.
+- Windows terminal builder now refreshes `logs/latest-windows-build.log` for easier troubleshooting.
+- Windows Android builder now finds CMake and Ninja from Qt Tools, MSYS2 or Visual Studio instead of requiring them to already be in PATH.
+- Windows Android builder now exits explicitly after creating the APK and stops Gradle daemons so the terminal builder does not appear stuck after a successful build.
+- App icons now share a modern SVG source with regenerated PNG, ICO, ICNS and Android adaptive-icon assets.
+- Removed assistant-style troubleshooting wording from the Windows terminal builder output.
+- Mobile UI now gives visible save feedback, supports saved-phrase sorting, and allows swipe-left deletion for saved and quick phrases.
+- Mobile UI now uses a calmer, more compact visual style with subtler borders, smaller radii and less saturated controls.
+- App icons now use a more professional monogram and audio-wave mark across SVG, PNG, ICO, ICNS and Android assets.
+- Android edit sheet now follows the soft keyboard and the activity requests resize behavior so action buttons stay visible while editing.
+- Bumped version to 0.3.62.
+- Reworked README into a shorter professional overview and moved detailed guidance behind docs links.
 - Zpřehledněn výběr výchozího hlasu ve Windows.
 - Opraven vzhled radio tlačítek v tmavém i světlém režimu.
 - Zmenšeny mezery mezi volbami hlasů v prvotním nastavení.

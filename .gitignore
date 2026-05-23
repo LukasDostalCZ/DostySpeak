@@ -1,11 +1,46 @@
-build/
-*.user
-*.autosave
-.DS_Store
-.idea/
-.vscode/
+# Local build outputs
+/build/
+/build-*/
+/dist/
+/logs/
+
+# CMake / compiler byproducts
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+*.ilk
+*.exp
+
+# Generated release artifacts
 *.app/
 *.exe
 *.dll
 *.dmg
 *.AppImage
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.deb
+*.rpm
+*.msi
+*.apk
+*.aab
+*.ipa
+
+# Generated Windows/MSYS2 helper scripts
+/.dosty-*.sh
+
+# IDE / OS noise
+*.user
+*.autosave
+*.log
+.DS_Store
+.idea/
+.vscode/

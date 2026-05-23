@@ -19,6 +19,8 @@ cd $env:USERPROFILE\Desktop\dosty-speak
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-terminal-windows.ps1
 ```
 
+The Windows TUI supports arrow keys, `j/k`, space toggles, `1-4` presets, `a` all/none, `n` none, `l` logs and `q` quit. It writes both a timestamped log and `logs/latest-windows-build.log`.
+
 If the project is in `Dev` instead of Desktop:
 
 ```powershell
