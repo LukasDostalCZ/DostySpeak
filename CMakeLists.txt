@@ -20,6 +20,7 @@ else()
 endif()
 
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 if(WIN32)
     enable_language(RC)
@@ -51,6 +52,7 @@ add_executable(dosty-speak WIN32
     src/Speaker.h
     src/MainWindow.cpp
     src/MainWindow.h
+    src/resources.qrc
     ${DOSTY_SPEAK_PLATFORM_SOURCES}
 )
 
@@ -58,6 +60,10 @@ target_link_libraries(dosty-speak PRIVATE
     ${QT_PACKAGE}::Widgets
     ${QT_PACKAGE}::Network
 )
+
+if(WIN32)
+    target_link_libraries(dosty-speak PRIVATE dwmapi winmm)
+endif()
 
 if(APPLE)
     set_source_files_properties(resources/icons/dosty-speak.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")

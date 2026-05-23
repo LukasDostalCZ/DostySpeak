@@ -30,6 +30,7 @@ struct AppSettings {
 
     QString sortMode = "usage";         // usage | created | updated | alpha
     QStringList folders = {"General"};
+    QString appearanceMode = "system";  // system | light | dark
     bool darkMode = false;
     bool clearAfterSpeak = false;
     bool firstRunDone = false;
@@ -39,4 +40,5 @@ class SettingsStore {
 public:
     static AppSettings load();
     static void save(const AppSettings &settings);
+    static bool systemPrefersDarkTheme();
 };

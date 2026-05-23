@@ -27,4 +27,5 @@ private:
     QString speakEdgeOnline(const QString &text);
     QString playMp3(const QString &path);
     QString playWav(const QString &path);
+    QString cachePath(const QString &engine, const QString &key, const QString &extension) const;
 };

@@ -60,8 +60,38 @@
 #include <QUuid>
 
 #ifdef Q_OS_WIN
+#include <dwmapi.h>
 #include <windows.h>
 #include <shellapi.h>
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+#ifndef DWMWA_WINDOW_CORNER_PREFERENCE
+#define DWMWA_WINDOW_CORNER_PREFERENCE 33
+#endif
+
+#ifndef DWMWA_SYSTEMBACKDROP_TYPE
+#define DWMWA_SYSTEMBACKDROP_TYPE 38
+#endif
+
+static void applyWindows11Frame(QWidget *widget, bool darkMode)
+{
+    if (!widget) return;
+
+    const HWND hwnd = reinterpret_cast<HWND>(widget->winId());
+    if (!hwnd) return;
+
+    BOOL useDarkTitleBar = darkMode ? TRUE : FALSE;
+    DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkTitleBar, sizeof(useDarkTitleBar));
+
+    const DWORD roundedCorners = 2; // DWMWCP_ROUND
+    DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, &roundedCorners, sizeof(roundedCorners));
+
+    const DWORD micaBackdrop = 2; // DWMSBT_MAINWINDOW
+    DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, &micaBackdrop, sizeof(micaBackdrop));
+}
 #endif
 
 MainWindow::MainWindow(QWidget *parent)
@@ -367,6 +397,7 @@ void MainWindow::buildMenus()
     view->addAction(trKey("menu.resetSetup"), this, &MainWindow::resetSettingsAndRestartWizard);
     view->addAction(trKey("menu.toggleDark"), this, [this] {
         settings_.darkMode = !settings_.darkMode;
+        settings_.appearanceMode = settings_.darkMode ? "dark" : "light";
         SettingsStore::save(settings_);
         applyTheme();
     }, QKeySequence("Ctrl+D"));
@@ -381,6 +412,10 @@ void MainWindow::buildMenus()
 
 void MainWindow::applyTheme()
 {
+    if (settings_.appearanceMode == "system") {
+        settings_.darkMode = SettingsStore::systemPrefersDarkTheme();
+    }
+
     QString style;
     if (settings_.darkMode) {
         style = R"(
@@ -389,14 +424,37 @@ void MainWindow::applyTheme()
             QLineEdit, QTreeWidget, QListWidget, QPlainTextEdit, QSpinBox {
                 background: #111318; color: #f3f4f6; border: 1px solid #343b47; border-radius: 8px; padding: 8px;
             }
-            QComboBox { background: #111318; color: #f3f4f6; border: 1px solid #343b47; border-radius: 10px; padding: 8px 38px 8px 10px; min-height: 24px; }
-            QComboBox::drop-down { subcontrol-origin: border; subcontrol-position: top right; width: 34px; border-left: 1px solid #343b47; border-top-right-radius: 10px; border-bottom-right-radius: 10px; background: #202734; }
-            QComboBox::down-arrow { image: url(:/qt-project.org/styles/commonstyle/images/down-16.png); width: 12px; height: 12px; }
-            QComboBox::drop-down:hover { background: #2b3444; }
+            QComboBox {
+                background: #111318; color: #f3f4f6; border: 1px solid #343b47; border-radius: 8px;
+                padding: 7px 30px 7px 10px; min-height: 24px; selection-background-color: #33415c;
+            }
+            QComboBox:hover { background: #111318; border: 1px solid #465064; }
+            QComboBox:focus, QComboBox:on { background: #111318; border: 1px solid #5b677c; }
+            QComboBox:disabled { background: #111318; color: #798394; border: 1px solid #2f3643; }
+            QComboBox::drop-down {
+                subcontrol-origin: padding; subcontrol-position: top right; width: 26px;
+                border: none; border-top-right-radius: 8px; border-bottom-right-radius: 8px; background: transparent;
+            }
+            QComboBox::drop-down:hover { background: transparent; }
+            QComboBox::down-arrow { image: url(:/ui/chevron-down-dark.svg); width: 14px; height: 14px; }
+            QComboBox QAbstractItemView {
+                background: #111318; color: #f3f4f6; border: 1px solid #343b47; border-radius: 8px;
+                padding: 4px; outline: 0px; selection-background-color: #33415c; selection-color: #ffffff;
+            }
+            QComboBox QAbstractItemView::item { min-height: 28px; padding: 6px 10px; border-radius: 6px; }
+            QComboBox QAbstractItemView::item:hover { background: #263142; color: #ffffff; }
             QPushButton { background: #2b3240; color: #f3f4f6; border: 1px solid #414a5a; border-radius: 8px; padding: 8px 12px; }
             QPushButton:hover { background: #354052; }
             QHeaderView::section { background: #20242c; color: #f3f4f6; padding: 8px; border: none; }
+            QTreeWidget::item, QListWidget::item { background: transparent; color: #f3f4f6; padding: 4px 6px; }
+            QTreeWidget::item:alternate, QListWidget::item:alternate { background: #1c222c; color: #f3f4f6; }
+            QTreeWidget::item:hover, QListWidget::item:hover { background: #263142; color: #ffffff; }
             QTreeWidget::item:selected, QListWidget::item:selected { background: #33415c; }
+            QTreeWidget::item:disabled, QListWidget::item:disabled { background: transparent; color: #798394; }
+            QTreeView::indicator, QListView::indicator, QCheckBox::indicator { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #8b95a7; background: #111318; }
+            QTreeView::indicator:unchecked, QListView::indicator:unchecked, QCheckBox::indicator:unchecked { background: #111318; }
+            QTreeView::indicator:checked, QListView::indicator:checked, QCheckBox::indicator:checked { background: #2563eb; border: 1px solid #60a5fa; }
+            QTreeView::indicator:hover, QListView::indicator:hover, QCheckBox::indicator:hover { border: 1px solid #93c5fd; }
             QLabel#title { font-size: 22pt; font-weight: 700; }
             QLabel#hint, QLabel#status { color: #b5bdc9; }
             QLabel#sectionTitle { font-size: 14pt; font-weight: 700; }
@@ -420,14 +478,37 @@ void MainWindow::applyTheme()
             QLineEdit, QTreeWidget, QListWidget, QPlainTextEdit, QSpinBox {
                 background: #ffffff; color: #111827; border: 1px solid #d5dbe7; border-radius: 8px; padding: 8px;
             }
-            QComboBox { background: #ffffff; color: #111827; border: 1px solid #d5dbe7; border-radius: 10px; padding: 8px 38px 8px 10px; min-height: 24px; }
-            QComboBox::drop-down { subcontrol-origin: border; subcontrol-position: top right; width: 34px; border-left: 1px solid #d5dbe7; border-top-right-radius: 10px; border-bottom-right-radius: 10px; background: #f3f6fb; }
-            QComboBox::down-arrow { image: url(:/qt-project.org/styles/commonstyle/images/down-16.png); width: 12px; height: 12px; }
-            QComboBox::drop-down:hover { background: #e7edf7; }
+            QComboBox {
+                background: #ffffff; color: #111827; border: 1px solid #d5dbe7; border-radius: 8px;
+                padding: 7px 30px 7px 10px; min-height: 24px; selection-background-color: #dbe8ff;
+            }
+            QComboBox:hover { background: #ffffff; border: 1px solid #aeb8c8; }
+            QComboBox:focus, QComboBox:on { background: #ffffff; border: 1px solid #7f8da3; }
+            QComboBox:disabled { background: #ffffff; color: #8a94a6; border: 1px solid #d5dbe7; }
+            QComboBox::drop-down {
+                subcontrol-origin: padding; subcontrol-position: top right; width: 26px;
+                border: none; border-top-right-radius: 8px; border-bottom-right-radius: 8px; background: transparent;
+            }
+            QComboBox::drop-down:hover { background: transparent; }
+            QComboBox::down-arrow { image: url(:/ui/chevron-down-light.svg); width: 14px; height: 14px; }
+            QComboBox QAbstractItemView {
+                background: #ffffff; color: #111827; border: 1px solid #d5dbe7; border-radius: 8px;
+                padding: 4px; outline: 0px; selection-background-color: #dbe8ff; selection-color: #111827;
+            }
+            QComboBox QAbstractItemView::item { min-height: 28px; padding: 6px 10px; border-radius: 6px; }
+            QComboBox QAbstractItemView::item:hover { background: #e8effb; color: #111827; }
             QPushButton { background: #ffffff; color: #111827; border: 1px solid #d5dbe7; border-radius: 8px; padding: 8px 12px; }
             QPushButton:hover { background: #f4f7fb; }
             QHeaderView::section { background: #f8fafc; color: #111827; padding: 8px; border: none; }
+            QTreeWidget::item, QListWidget::item { background: transparent; color: #111827; padding: 4px 6px; }
+            QTreeWidget::item:alternate, QListWidget::item:alternate { background: #f3f6fb; color: #111827; }
+            QTreeWidget::item:hover, QListWidget::item:hover { background: #e8effb; color: #111827; }
             QTreeWidget::item:selected, QListWidget::item:selected { background: #dbe8ff; }
+            QTreeWidget::item:disabled, QListWidget::item:disabled { background: transparent; color: #8a94a6; }
+            QTreeView::indicator, QListView::indicator, QCheckBox::indicator { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #64748b; background: #ffffff; }
+            QTreeView::indicator:unchecked, QListView::indicator:unchecked, QCheckBox::indicator:unchecked { background: #ffffff; }
+            QTreeView::indicator:checked, QListView::indicator:checked, QCheckBox::indicator:checked { background: #2563eb; border: 1px solid #1d4ed8; }
+            QTreeView::indicator:hover, QListView::indicator:hover, QCheckBox::indicator:hover { border: 1px solid #2563eb; }
             QLabel#title { font-size: 22pt; font-weight: 700; }
             QLabel#hint, QLabel#status { color: #586174; }
             QLabel#sectionTitle { font-size: 14pt; font-weight: 700; }
@@ -446,6 +527,10 @@ void MainWindow::applyTheme()
         )";
     }
     qApp->setStyleSheet(style);
+
+#ifdef Q_OS_WIN
+    applyWindows11Frame(this, settings_.darkMode);
+#endif
 }
 
 QString MainWindow::currentFolderFilter() const
@@ -1852,6 +1937,9 @@ void MainWindow::showFirstRunWizard()
     // Step 1: language and theme.
     QDialog step1(this);
     step1.setWindowTitle(trKey("dialog.firstRun"));
+#ifdef Q_OS_WIN
+    applyWindows11Frame(&step1, settings_.darkMode);
+#endif
     step1.resize(620, 320);
     step1.setMinimumSize(580, 300);
 
@@ -1894,7 +1982,9 @@ void MainWindow::showFirstRunWizard()
     appearance->addItem(trKey("appearance.system"), "system");
     appearance->addItem(trKey("appearance.light"), "light");
     appearance->addItem(trKey("appearance.dark"), "dark");
-    appearance->setCurrentIndex(appearance->findData("system"));
+    int appearanceIndex = appearance->findData(settings_.appearanceMode);
+    if (appearanceIndex < 0) appearanceIndex = appearance->findData("system");
+    appearance->setCurrentIndex(appearanceIndex);
     form->addRow(trKey("firstRun.appearance"), appearance);
 
     step1Layout->addLayout(form);
@@ -1928,13 +2018,10 @@ void MainWindow::showFirstRunWizard()
     I18n::instance().load(settings_.language);
 
     const QString appearanceChoice = appearance->currentData().toString();
+    settings_.appearanceMode = appearanceChoice;
     if (appearanceChoice == "dark") settings_.darkMode = true;
     else if (appearanceChoice == "light") settings_.darkMode = false;
-    else {
-        // Reload defaults so the system preference is detected again, especially on macOS.
-        AppSettings defaults = SettingsStore::load();
-        settings_.darkMode = defaults.darkMode;
-    }
+    else settings_.darkMode = SettingsStore::systemPrefersDarkTheme();
 
     phrases_ = PhraseStore::defaultPhrasesForLanguage(settings_.language);
     PhraseStore::save(phrases_);
@@ -1945,6 +2032,9 @@ void MainWindow::showFirstRunWizard()
     // Step 2: install engines and voices.
     QDialog step2(this);
     step2.setWindowTitle(trKey("firstRun.installEngines"));
+#ifdef Q_OS_WIN
+    applyWindows11Frame(&step2, settings_.darkMode);
+#endif
     step2.resize(980, 620);
     step2.setMinimumSize(900, 560);
 
@@ -2097,6 +2187,9 @@ void MainWindow::showFirstRunWizard()
     // Step 3: choose default only from installed/available voices.
     QDialog step3(this);
     step3.setWindowTitle(trKey("firstRun.defaultVoiceTitle"));
+#ifdef Q_OS_WIN
+    applyWindows11Frame(&step3, settings_.darkMode);
+#endif
     step3.resize(820, 540);
     step3.setMinimumSize(760, 480);
 
@@ -2195,6 +2288,9 @@ void MainWindow::showSynthInstallDialog(QWidget *parentWidget)
 {
     QDialog dialog(parentWidget ? parentWidget : this);
     dialog.setWindowTitle(trKey("menu.installEngines"));
+#ifdef Q_OS_WIN
+    applyWindows11Frame(&dialog, settings_.darkMode);
+#endif
     dialog.resize(980, 680);
     dialog.setMinimumSize(900, 620);
 
@@ -2355,6 +2451,9 @@ void MainWindow::showDefaultVoiceWizard(QWidget *parentWidget)
 {
     QDialog dialog(parentWidget ? parentWidget : this);
     dialog.setWindowTitle(trKey("firstRun.defaultVoiceTitle"));
+#ifdef Q_OS_WIN
+    applyWindows11Frame(&dialog, settings_.darkMode);
+#endif
     dialog.resize(820, 620);
     dialog.setMinimumSize(760, 520);
 
@@ -2859,6 +2958,9 @@ void MainWindow::showSettingsDialog()
 {
     QDialog dialog(this);
     dialog.setWindowTitle(trKey("dialog.settings"));
+#ifdef Q_OS_WIN
+    applyWindows11Frame(&dialog, settings_.darkMode);
+#endif
     dialog.resize(760, 520);
     dialog.setMinimumSize(700, 460);
 
@@ -2873,9 +2975,12 @@ void MainWindow::showSettingsDialog()
     auto *appearanceMode = new QComboBox(generalPage);
     appearanceMode->setMinimumContentsLength(28);
     appearanceMode->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    appearanceMode->addItem(trKey("appearance.system"), "system");
     appearanceMode->addItem(trKey("appearance.light"), "light");
     appearanceMode->addItem(trKey("appearance.dark"), "dark");
-    appearanceMode->setCurrentIndex(settings_.darkMode ? appearanceMode->findData("dark") : appearanceMode->findData("light"));
+    int appearanceIndex = appearanceMode->findData(settings_.appearanceMode);
+    if (appearanceIndex < 0) appearanceIndex = appearanceMode->findData(settings_.darkMode ? "dark" : "light");
+    appearanceMode->setCurrentIndex(appearanceIndex);
     generalForm->addRow(trKey("firstRun.appearance"), appearanceMode);
 
     auto *clearAfter = new QCheckBox(generalPage);
@@ -2930,7 +3035,11 @@ void MainWindow::showSettingsDialog()
     tabs->addTab(pathsPage, trKey("label.paths"));
 
     connect(appearanceMode, QOverload<int>::of(&QComboBox::currentIndexChanged), &dialog, [this, appearanceMode] {
-        settings_.darkMode = appearanceMode->currentData().toString() == "dark";
+        const QString mode = appearanceMode->currentData().toString();
+        settings_.appearanceMode = mode;
+        if (mode == "dark") settings_.darkMode = true;
+        else if (mode == "light") settings_.darkMode = false;
+        else settings_.darkMode = SettingsStore::systemPrefersDarkTheme();
         applyTheme();
     });
 
@@ -2941,7 +3050,10 @@ void MainWindow::showSettingsDialog()
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
     if (dialog.exec() == QDialog::Accepted) {
-        settings_.darkMode = appearanceMode->currentData().toString() == "dark";
+        settings_.appearanceMode = appearanceMode->currentData().toString();
+        if (settings_.appearanceMode == "dark") settings_.darkMode = true;
+        else if (settings_.appearanceMode == "light") settings_.darkMode = false;
+        else settings_.darkMode = SettingsStore::systemPrefersDarkTheme();
         settings_.clearAfterSpeak = clearAfter->isChecked();
         settings_.nativeSpeed = speed->value();
         settings_.nativePitch = pitch->value();

@@ -4,7 +4,7 @@
 
 # Dosty Speak
 
-**Current version:** 0.3.62  
+**Current version:** 0.3.63  
 **Downloads:** [latest GitHub release](https://github.com/LukasDostalCZ/DostySpeak/releases/latest)  
 **License:** MIT
 

@@ -2,6 +2,7 @@
 #include "AppPaths.h"
 
 #include <QFileInfo>
+#include <QCryptographicHash>
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QTemporaryFile>
@@ -12,10 +13,13 @@
 #include <QEventLoop>
 #include <QNetworkRequest>
 #include <QNetworkReply>
+
+#include <string>
 #include <QNetworkAccessManager>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
+#include <mmsystem.h>
 #endif
 
 
@@ -27,6 +31,55 @@ static void hideProcessWindow(QProcess *process)
         args->startupInfo->dwFlags |= STARTF_USESHOWWINDOW;
         args->startupInfo->wShowWindow = SW_HIDE;
     });
+}
+
+static void stopWindowsAudio()
+{
+    PlaySoundW(nullptr, nullptr, 0);
+    mciSendStringW(L"stop dosty_speak_media", nullptr, 0, nullptr);
+    mciSendStringW(L"close dosty_speak_media", nullptr, 0, nullptr);
+}
+
+static std::wstring winPath(const QString &path)
+{
+    QString nativePath = QDir::toNativeSeparators(path);
+    nativePath.remove('"');
+    return nativePath.toStdWString();
+}
+
+static bool playWindowsWav(const QString &path)
+{
+    const std::wstring nativePath = winPath(path);
+    return PlaySoundW(nativePath.c_str(), nullptr, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+}
+
+static bool mciCommand(const std::wstring &command)
+{
+    return mciSendStringW(command.c_str(), nullptr, 0, nullptr) == 0;
+}
+
+static bool playWindowsMp3(const QString &path, int volume)
+{
+    stopWindowsAudio();
+
+    const std::wstring nativePath = winPath(path);
+    const std::wstring openCommand =
+        L"open \"" + nativePath + L"\" type mpegvideo alias dosty_speak_media";
+
+    if (!mciCommand(openCommand)) {
+        mciSendStringW(L"close dosty_speak_media", nullptr, 0, nullptr);
+        return false;
+    }
+
+    const int mciVolume = qBound(0, volume, 100) * 10;
+    mciCommand(L"setaudio dosty_speak_media volume to " + std::to_wstring(mciVolume));
+
+    if (!mciCommand(L"play dosty_speak_media")) {
+        mciSendStringW(L"close dosty_speak_media", nullptr, 0, nullptr);
+        return false;
+    }
+
+    return true;
 }
 #endif
 
@@ -49,6 +102,10 @@ void Speaker::stop()
         if (p) p->deleteLater();
     }
     processes_.clear();
+
+#ifdef Q_OS_WIN
+    stopWindowsAudio();
+#endif
 
 #ifndef Q_OS_WIN
     QProcess::execute("pkill", {"-f", "espeak-ng"});
@@ -197,8 +254,6 @@ QString Speaker::speakEspeakNg(const QString &text)
 
 QString Speaker::speakEdgeOnline(const QString &text)
 {
-    const QString mp3Path = AppPaths::dataDir() + "/edge-tts-last.mp3";
-
     QString command = settings_.edgeTtsCommand.trimmed();
     if (command.isEmpty()) command = "edge-tts";
 
@@ -211,6 +266,11 @@ QString Speaker::speakEdgeOnline(const QString &text)
     else if (lang == "pl") voice = "pl-PL-MarekNeural";
     else if (lang == "fr") voice = "fr-FR-HenriNeural";
     else voice = "cs-CZ-AntoninNeural";
+
+    const QString mp3Path = cachePath("edge", voice + "\n" + text, "mp3");
+    if (QFileInfo::exists(mp3Path) && QFileInfo(mp3Path).size() > 0) {
+        return playMp3(mp3Path);
+    }
 
     const QString textPath = AppPaths::dataDir() + "/edge-tts-input-utf8.txt";
     QFile textFile(textPath);
@@ -264,8 +324,6 @@ QString Speaker::speakEdgeOnline(const QString &text)
 
 QString Speaker::speakGoogleOnline(const QString &text)
 {
-    const QString mp3Path = AppPaths::dataDir() + "/google-tts-last.mp3";
-
     // Unofficial online Google Translate TTS endpoint.
     // This is useful as an optional extra voice, but it requires internet
     // and may change or stop working. Piper/native remain the reliable engines.
@@ -276,11 +334,17 @@ QString Speaker::speakGoogleOnline(const QString &text)
         ttsText = ttsText.left(190);
     }
 
+    const QString language = settings_.onlineLanguage.isEmpty() ? "cs" : settings_.onlineLanguage;
+    const QString mp3Path = cachePath("google", language + "\n" + ttsText, "mp3");
+    if (QFileInfo::exists(mp3Path) && QFileInfo(mp3Path).size() > 0) {
+        return playMp3(mp3Path);
+    }
+
     QUrl url("https://translate.google.com/translate_tts");
     QUrlQuery query;
     query.addQueryItem("ie", "UTF-8");
     query.addQueryItem("client", "tw-ob");
-    query.addQueryItem("tl", settings_.onlineLanguage.isEmpty() ? "cs" : settings_.onlineLanguage);
+    query.addQueryItem("tl", language);
     query.addQueryItem("q", ttsText);
     url.setQuery(query);
 
@@ -344,7 +408,33 @@ QString Speaker::speakPiper(const QString &text)
     }
 #endif
 
-    const QString wavPath = AppPaths::dataDir() + "/last.wav";
+    double qualityLengthScale = settings_.piperLengthScale;
+    double qualityNoiseScale = settings_.piperNoiseScale;
+    double qualityNoiseW = settings_.piperNoiseW;
+
+    if (settings_.piperQuality == "fast") {
+        // Faster perceived output: speak slightly quicker and use conservative noise.
+        qualityLengthScale = 0.72;
+        qualityNoiseScale = 0.20;
+        qualityNoiseW = 0.35;
+    } else if (settings_.piperQuality == "high") {
+        // Better sounding, a little slower/clearer.
+        qualityLengthScale = 0.95;
+        qualityNoiseScale = 0.45;
+        qualityNoiseW = 0.65;
+    }
+
+    const QString cacheKey = settings_.piperBinary + "\n"
+        + settings_.piperModel + "\n"
+        + settings_.piperQuality + "\n"
+        + QString::number(qualityLengthScale, 'f', 4) + "\n"
+        + QString::number(qualityNoiseScale, 'f', 4) + "\n"
+        + QString::number(qualityNoiseW, 'f', 4) + "\n"
+        + text;
+    const QString wavPath = cachePath("piper", cacheKey, "wav");
+    if (QFileInfo::exists(wavPath) && QFileInfo(wavPath).size() > 0) {
+        return playWav(wavPath);
+    }
 
     const QString inputPath = AppPaths::dataDir() + "/piper-input-utf8.txt";
     QFile inputFile(inputPath);
@@ -367,22 +457,6 @@ QString Speaker::speakPiper(const QString &text)
     env.insert("LANG", "C.UTF-8");
     piper.setProcessEnvironment(env);
     piper.setStandardInputFile(inputPath);
-
-    double qualityLengthScale = settings_.piperLengthScale;
-    double qualityNoiseScale = settings_.piperNoiseScale;
-    double qualityNoiseW = settings_.piperNoiseW;
-
-    if (settings_.piperQuality == "fast") {
-        // Faster perceived output: speak slightly quicker and use conservative noise.
-        qualityLengthScale = 0.72;
-        qualityNoiseScale = 0.20;
-        qualityNoiseW = 0.35;
-    } else if (settings_.piperQuality == "high") {
-        // Better sounding, a little slower/clearer.
-        qualityLengthScale = 0.95;
-        qualityNoiseScale = 0.45;
-        qualityNoiseW = 0.65;
-    }
 
     const QStringList args = {
         "--model", settings_.piperModel,
@@ -429,6 +503,10 @@ QString Speaker::speakPiper(const QString &text)
 QString Speaker::playMp3(const QString &path)
 {
 #ifdef Q_OS_WIN
+    if (playWindowsMp3(path, settings_.outputVolume)) {
+        return {};
+    }
+
     auto *process = new QProcess(this);
 #ifdef Q_OS_WIN
     hideProcessWindow(process);
@@ -500,6 +578,10 @@ QString Speaker::playMp3(const QString &path)
 QString Speaker::playWav(const QString &path)
 {
 #ifdef Q_OS_WIN
+    if (playWindowsWav(path)) {
+        return {};
+    }
+
     auto *process = new QProcess(this);
 #ifdef Q_OS_WIN
     hideProcessWindow(process);
@@ -544,4 +626,13 @@ QString Speaker::playWav(const QString &path)
 
     processes_.push_back(process);
     return {};
+}
+
+QString Speaker::cachePath(const QString &engine, const QString &key, const QString &extension) const
+{
+    QDir cacheDir(AppPaths::dataDir() + "/tts-cache");
+    if (!cacheDir.exists()) cacheDir.mkpath(".");
+
+    const QByteArray hash = QCryptographicHash::hash(key.toUtf8(), QCryptographicHash::Sha256).toHex();
+    return cacheDir.filePath(engine + "-" + QString::fromLatin1(hash.left(24)) + "." + extension);
 }

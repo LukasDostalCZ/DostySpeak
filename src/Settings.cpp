@@ -8,12 +8,23 @@
 #include <QPalette>
 #include <QLocale>
 #include <QSaveFile>
+#include <QSettings>
 #include <QFile>
 #include <QProcess>
 
 
-static bool systemPrefersDarkTheme()
+bool SettingsStore::systemPrefersDarkTheme()
 {
+#ifdef Q_OS_WIN
+    QSettings personalization(
+        "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        QSettings::NativeFormat
+    );
+    if (personalization.contains("AppsUseLightTheme")) {
+        return personalization.value("AppsUseLightTheme", 1).toInt() == 0;
+    }
+#endif
+
 #ifdef Q_OS_MAC
     QProcess process;
     process.start("defaults", {"read", "-g", "AppleInterfaceStyle"});
@@ -43,7 +54,7 @@ static QString defaultAudioPlayer()
 AppSettings SettingsStore::load()
 {
     AppSettings s;
-    s.darkMode = systemPrefersDarkTheme();
+    s.darkMode = SettingsStore::systemPrefersDarkTheme();
 
     const QLocale locale = QLocale::system();
     if (locale.language() == QLocale::Czech) {
@@ -97,7 +108,17 @@ AppSettings SettingsStore::load()
         }
         if (s.folders.isEmpty()) s.folders << "General";
     }
-    s.darkMode = o.value("darkMode").toBool(s.darkMode);
+    s.appearanceMode = o.value("appearanceMode").toString("system");
+    if (s.appearanceMode != "system" && s.appearanceMode != "light" && s.appearanceMode != "dark") {
+        s.appearanceMode = "system";
+    }
+    if (s.appearanceMode == "dark") {
+        s.darkMode = true;
+    } else if (s.appearanceMode == "light") {
+        s.darkMode = false;
+    } else {
+        s.darkMode = SettingsStore::systemPrefersDarkTheme();
+    }
     s.clearAfterSpeak = o.value("clearAfterSpeak").toBool(s.clearAfterSpeak);
     s.firstRunDone = o.value("firstRunDone").toBool(s.firstRunDone);
 
@@ -138,6 +159,7 @@ void SettingsStore::save(const AppSettings &s)
     QJsonArray folderArray;
     for (const QString &folder : s.folders) folderArray.append(folder);
     o["folders"] = folderArray;
+    o["appearanceMode"] = s.appearanceMode;
     o["darkMode"] = s.darkMode;
     o["clearAfterSpeak"] = s.clearAfterSpeak;
     o["firstRunDone"] = s.firstRunDone;

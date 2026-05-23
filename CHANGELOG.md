@@ -1,6 +1,11 @@
-## 0.3.62
+## 0.3.63
 
 - Windows terminal builder now has a grouped full-screen menu with detail panel, presets, scroll-friendly navigation and clearer live step output.
+- Windows desktop now requests native Windows 11 window treatment, including dark title bar, rounded corners and Mica backdrop where supported.
+- Windows now detects the app theme from the Windows dark/light app setting and keeps a separate System/Light/Dark appearance mode.
+- Dark mode list rows, alternating rows and checkbox indicators are now readable in setup and install dialogs.
+- Windows audio playback now avoids PowerShell for WAV/MP3 startup when possible, reducing the perceived delay before speech starts.
+- Piper, Google online and Edge online voices now reuse cached generated audio for repeated phrases.
 - Windows terminal builder now refreshes `logs/latest-windows-build.log` for easier troubleshooting.
 - Windows Android builder now finds CMake and Ninja from Qt Tools, MSYS2 or Visual Studio instead of requiring them to already be in PATH.
 - Windows Android builder now exits explicitly after creating the APK and stops Gradle daemons so the terminal builder does not appear stuck after a successful build.
@@ -10,7 +15,7 @@
 - Mobile UI now uses a calmer, more compact visual style with subtler borders, smaller radii and less saturated controls.
 - App icons now use a more professional monogram and audio-wave mark across SVG, PNG, ICO, ICNS and Android assets.
 - Android edit sheet now follows the soft keyboard and the activity requests resize behavior so action buttons stay visible while editing.
-- Bumped version to 0.3.62.
+- Bumped version to 0.3.63.
 - Reworked README into a shorter professional overview and moved detailed guidance behind docs links.
 - Zpřehledněn výběr výchozího hlasu ve Windows.
 - Opraven vzhled radio tlačítek v tmavém i světlém režimu.
