@@ -105,4 +105,4 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Author
 
-Created by **Lukas Dostal**.
+Created by **Lukáš Dostál** <luklin626@gmail.com>.

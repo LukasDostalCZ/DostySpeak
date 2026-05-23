@@ -41,13 +41,19 @@ The Linux TUI can build the desktop app and create packages.
 Direct package build without the menu:
 
 ```bash
-./scripts/build-linux-packages.sh both
+./scripts/build-linux-packages.sh release
+```
+
+For 32-bit Linux, run inside a real i386/i686 Linux chroot, container or VM:
+
+```bash
+./scripts/build-linux-packages.sh release-i386
 ```
 
 Outputs:
 
 ```text
-dist/linux/
+dist/
 ```
 
 ## Git check before push

@@ -1232,6 +1232,85 @@ void MainWindow::rebuildUiAfterLanguageChange()
     status_->setText(trKey("status.languageApplied"));
 }
 
+bool MainWindow::installLinuxPythonVenvPackage(QProgressDialog *progress, QWidget *owner) const
+{
+#ifdef Q_OS_LINUX
+    QWidget *messageOwner = owner ? owner : const_cast<MainWindow *>(this);
+
+    if (progress) {
+        progress->setLabelText(trKey("status.installingPythonVenvPackage"));
+        qApp->processEvents();
+    }
+
+    const QString script = R"VENVSCRIPT(
+set -e
+py_pkg="$(python3 - <<'PY'
+import sys
+print(f"python{sys.version_info.major}.{sys.version_info.minor}-venv")
+PY
+)"
+
+root_sh() {
+  if [ "$(id -u)" -eq 0 ]; then
+    sh -c "$1"
+  elif command -v pkexec >/dev/null 2>&1; then
+    pkexec sh -c "$1"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo sh -c "$1"
+  else
+    return 126
+  fi
+}
+
+if command -v apt-get >/dev/null 2>&1; then
+  root_sh "DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $py_pkg" \
+    || root_sh "DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python3-venv"
+elif command -v dnf >/dev/null 2>&1; then
+  root_sh "dnf install -y python3"
+elif command -v zypper >/dev/null 2>&1; then
+  root_sh "zypper install -y python3"
+elif command -v pacman >/dev/null 2>&1; then
+  root_sh "pacman -S --needed --noconfirm python"
+else
+  exit 20
+fi
+
+tmp="$(mktemp -d)"
+python3 -m venv --clear "$tmp/test-venv"
+rm -rf "$tmp"
+)VENVSCRIPT";
+
+    QProcess process;
+    process.start("bash", {"-lc", script});
+
+    if (!process.waitForStarted(15000)) {
+        QMessageBox::warning(messageOwner, trKey("dialog.voice"), trKey("status.processStartFailed") + "\n\nbash");
+        return false;
+    }
+
+    while (!process.waitForFinished(250)) {
+        qApp->processEvents();
+        if (progress && progress->wasCanceled()) {
+            process.kill();
+            return false;
+        }
+    }
+
+    if (process.exitCode() != 0) {
+        const QString out = QString::fromUtf8(process.readAllStandardOutput());
+        const QString err = QString::fromUtf8(process.readAllStandardError());
+        QMessageBox::warning(messageOwner, trKey("dialog.voice"), trKey("status.pythonVenvInstallFailed") + "\n\n" + out + "\n" + err);
+        return false;
+    }
+
+    return true;
+#else
+    Q_UNUSED(progress);
+    Q_UNUSED(owner);
+    return false;
+#endif
+}
+
 bool MainWindow::installEdgeTtsRuntime(QWidget *parentWidget, bool silent)
 {
     QWidget *owner = parentWidget ? parentWidget : this;
@@ -1364,8 +1443,20 @@ bool MainWindow::installEdgeTtsRuntime(QWidget *parentWidget, bool silent)
     const QString edgeCmd = venvDir + "/bin/edge-tts";
 
     if (!QFileInfo::exists(edgeCmd)) {
-        if (!runLocal("python3", {"-m", "venv", venvDir}, trKey("status.creatingEdgeVenv"))) {
+        if (!runLocal("python3", {"-m", "venv", "--clear", venvDir}, trKey("status.creatingEdgeVenv"), false)) {
+#ifdef Q_OS_LINUX
+            QDir(venvDir).removeRecursively();
+            if (!installLinuxPythonVenvPackage(&progress, owner)
+                || !runLocal("python3", {"-m", "venv", "--clear", venvDir}, trKey("status.creatingEdgeVenv"))) {
+                return false;
+            }
+#else
             QMessageBox::warning(owner, trKey("dialog.voice"), trKey("status.pythonVenvMissing"));
+            return false;
+#endif
+        }
+        if (!QFileInfo::exists(venvPython)) {
+            QMessageBox::warning(owner, trKey("dialog.voice"), trKey("status.edgeTtsInstallFailed"));
             return false;
         }
         if (!runLocal(venvPython, {"-m", "pip", "install", "--upgrade", "pip"}, trKey("status.upgradingPip"))) return false;
@@ -1778,16 +1869,32 @@ bool MainWindow::installPiperRuntimeSilent(QWidget *parentWidget)
     speaker_.setSettings(settings_);
     return true;
 #else
+    const QString venvPython = AppPaths::dataDir() + "/piper-venv/bin/python";
     const QString pipPath = AppPaths::dataDir() + "/piper-venv/bin/pip";
     const QString piperPath = AppPaths::dataDir() + "/piper-venv/bin/piper";
     const QString venvDir = AppPaths::dataDir() + "/piper-venv";
 
     if (!QFileInfo::exists(pipPath)) {
-        if (!run("python3", {"-m", "venv", venvDir}, trKey("status.creatingVenv"))) return false;
+        if (!run("python3", {"-m", "venv", "--clear", venvDir}, trKey("status.creatingVenv"), false)) {
+#ifdef Q_OS_LINUX
+            QDir(venvDir).removeRecursively();
+            if (!installLinuxPythonVenvPackage(&progress, parentWidget ? parentWidget : this)
+                || !run("python3", {"-m", "venv", "--clear", venvDir}, trKey("status.creatingVenv"))) {
+                return false;
+            }
+#else
+            QMessageBox::warning(parentWidget ? parentWidget : this, trKey("dialog.voice"), trKey("status.pythonVenvMissing"));
+            return false;
+#endif
+        }
     }
 
-    if (!run(pipPath, {"install", "--upgrade", "pip"}, trKey("status.upgradingPip"))) return false;
-    if (!run(pipPath, {"install", "--upgrade", "piper-tts"}, trKey("status.installingPiperPackage"))) return false;
+    if (!QFileInfo::exists(venvPython)) {
+        QMessageBox::warning(parentWidget ? parentWidget : this, trKey("dialog.voice"), trKey("status.piperInstallFailed"));
+        return false;
+    }
+    if (!run(venvPython, {"-m", "pip", "install", "--upgrade", "pip"}, trKey("status.upgradingPip"))) return false;
+    if (!run(venvPython, {"-m", "pip", "install", "--upgrade", "piper-tts"}, trKey("status.installingPiperPackage"))) return false;
 
     settings_.piperBinary = piperPath;
     SettingsStore::save(settings_);

@@ -42,7 +42,7 @@ run_menu_ui() {
     echo "Install it using your package manager, for example:"
     echo "  sudo apt install python3"
     echo
-    echo '{"selected":["deps","linux_desktop","both_packages"]}' > "$SELECTION_FILE"
+    echo '{"selected":["deps","linux_release"]}' > "$SELECTION_FILE"
     read -r -p "Press Enter to continue with default Linux package build, or Ctrl+C to stop."
   fi
 }
@@ -196,6 +196,15 @@ while IFS= read -r line; do
   SELECTED+=("$line")
 done < <(selected_keys)
 
+if printf '%s\n' "${SELECTED[@]}" | grep -q '^clean$'; then
+  REORDERED=("clean")
+  for key in "${SELECTED[@]}"; do
+    [[ "$key" == "clean" ]] && continue
+    REORDERED+=("$key")
+  done
+  SELECTED=("${REORDERED[@]}")
+fi
+
 TOTAL_STEPS="${#SELECTED[@]}"
 if [[ "$TOTAL_STEPS" -eq 0 ]]; then
   clear
@@ -208,7 +217,7 @@ echo "Build summary"
 echo "============="
 echo
 echo "Linux TUI uses the same log viewer style as the macOS builder."
-echo "DEB/RPM packaging is available from this menu."
+echo "Release builds create portable tar.gz plus DEB/RPM outputs in dist."
 echo
 echo "Version: $DOSTY_SPEAK_VERSION"
 echo "Log:     $LOG_FILE"
@@ -218,8 +227,8 @@ for key in "${SELECTED[@]}"; do
   echo "  - $key"
 done
 echo
-read -r -p "Start build? [y/N]: " answer
-[[ "$answer" =~ ^[Yy]$ ]] || exit 0
+read -r -p "Start build? [Y/n]: " answer
+[[ -z "$answer" || "$answer" =~ ^[Yy]$ ]] || exit 0
 
 step_index=0
 for key in "${SELECTED[@]}"; do
@@ -237,19 +246,14 @@ for key in "${SELECTED[@]}"; do
         FAILED_KEYS+=("linux_install")
       fi
       ;;
-    deb)
-      if ! run_logged_viewer "Create DEB package" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh deb'; then
-        FAILED_KEYS+=("deb")
+    linux_release)
+      if ! run_logged_viewer "Create current Linux release" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh release'; then
+        FAILED_KEYS+=("linux_release")
       fi
       ;;
-    rpm)
-      if ! run_logged_viewer "Create RPM package" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh rpm'; then
-        FAILED_KEYS+=("rpm")
-      fi
-      ;;
-    both_packages)
-      if ! run_logged_viewer "Create both DEB and RPM packages" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh both'; then
-        FAILED_KEYS+=("both_packages")
+    linux_i386_release)
+      if ! run_logged_viewer "Create 32-bit i386 Linux release" "$step_index" "$TOTAL_STEPS" bash -lc 'chmod +x scripts/build-linux-packages.sh && ./scripts/build-linux-packages.sh release-i386'; then
+        FAILED_KEYS+=("linux_i386_release")
       fi
       ;;
     mobile_preview)
@@ -269,19 +273,5 @@ done
 clear
 echo "Done."
 echo
-echo "Version:"
-echo "  $DOSTY_SPEAK_VERSION"
-echo
-echo "Full log:"
-echo "  $LOG_FILE"
-echo
-echo "Latest log shortcut:"
-echo "  $LATEST_LOG"
-echo
-echo "Artifacts:"
-echo "  dist/linux/"
-echo
-echo "Commit check:"
-echo "  git status"
-echo "  git diff --stat"
-echo
+echo "Log:       $LOG_FILE"
+echo "Artifacts: dist/"

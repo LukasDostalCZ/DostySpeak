@@ -91,6 +91,7 @@ private:
     void clearAppDataFiles();
     void rebuildUiAfterLanguageChange();
     bool installPiperRuntimeSilent(QWidget *parentWidget);
+    bool installLinuxPythonVenvPackage(QProgressDialog *progress, QWidget *owner) const;
     QString findPythonForPiper(QStringList *baseArgs = nullptr) const;
     void downloadVoiceById(const QString &voiceId, QWidget *parentWidget);
     bool configurePiperVoiceById(const QString &voiceId, QWidget *parentWidget, bool installRuntimeIfNeeded);

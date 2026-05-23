@@ -217,6 +217,8 @@
   "status.edgeTtsInstallFailed": "Edge TTS installation failed.",
   "status.edgeTtsInstalled": "Edge TTS was installed and configured.",
   "status.pythonVenvMissing": "Python venv is not available. On Linux install python3-venv.",
+  "status.installingPythonVenvPackage": "Installing Linux Python venv support...",
+  "status.pythonVenvInstallFailed": "Automatic installation of Python venv support failed. Install python3-venv or the matching pythonX.Y-venv package and try again.",
   "status.installEspeakQuestion": "Try to install eSpeak NG? Linux/macOS may need sudo or Homebrew. Windows uses winget if available.",
   "status.installingEspeakNg": "Installing eSpeak NG...",
   "status.espeakInstallFailed": "eSpeak NG installation failed.",

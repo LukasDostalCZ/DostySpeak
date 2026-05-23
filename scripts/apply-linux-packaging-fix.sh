@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-mkdir -p cmake scripts dist/linux logs
+mkdir -p cmake scripts dist logs
 chmod +x scripts/build-terminal-linux.sh scripts/build-linux-packages.sh 2>/dev/null || true
 
 if [[ ! -f CMakeLists.txt ]]; then

@@ -217,6 +217,8 @@
   "status.edgeTtsInstallFailed": "Instalace Edge TTS selhala.",
   "status.edgeTtsInstalled": "Edge TTS byl nainstalován a nastaven.",
   "status.pythonVenvMissing": "Python venv není dostupný. Na Linuxu doinstaluj python3-venv.",
+  "status.installingPythonVenvPackage": "Instaluji podporu Python venv pro Linux...",
+  "status.pythonVenvInstallFailed": "Automatická instalace podpory Python venv selhala. Nainstaluj python3-venv nebo odpovídající balík pythonX.Y-venv a zkus to znovu.",
   "status.installEspeakQuestion": "Chceš zkusit nainstalovat eSpeak NG? Na Linuxu/macOS může být potřeba sudo nebo Homebrew. Na Windows se použije winget, pokud je dostupný.",
   "status.installingEspeakNg": "Instaluji eSpeak NG...",
   "status.espeakInstallFailed": "Instalace eSpeak NG selhala.",
